@@ -5,57 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panda Web File Explorer (PWFE)</title>
     <style>
-        :root {
-            --bg-color: #f5f5f5;
-            --text-color: #333333;
-            --header-bg: #333333;
-            --header-text: #ffffff;
-            --card-bg: #ffffff;
-            --border-color: #dddddd;
-            --th-bg: #fafafa;
-            --th-color: #555555;
-            --hover-bg: #f9f9f9;
-            --link-color: #0066cc;
-            --btn-bg: #ffffff;
-            --btn-text: #333333;
-            --primary-bg: #0066cc;
-            --primary-hover: #004fb3;
-            --pre-bg: #f8f8f8;
-        }
-
-        [data-theme="dark"] {
-            --bg-color: #121212;
-            --text-color: #e0e0e0;
-            --header-bg: #1f1f1f;
-            --header-text: #ffffff;
-            --card-bg: #1e1e1e;
-            --border-color: #333333;
-            --th-bg: #252525;
-            --th-color: #aaaaaa;
-            --hover-bg: #2a2a2a;
-            --link-color: #3b82f6;
-            --btn-bg: #2a2a2a;
-            --btn-text: #e0e0e0;
-            --primary-bg: #2563eb;
-            --primary-hover: #1d4ed8;
-            --pre-bg: #181818;
-        }
-
         body {
             font-family: Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            background-color: #f5f5f5;
+            color: #333;
             margin: 0;
             padding: 0;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            transition: background-color 0.2s, color 0.2s;
         }
 
         header {
-            background-color: var(--header-bg);
-            color: var(--header-text);
+            background-color: #333;
+            color: #fff;
             padding: 10px 20px;
             display: flex;
             justify-content: flex-end;
@@ -66,21 +29,21 @@
         select, button {
             padding: 6px 12px;
             border-radius: 4px;
-            border: 1px solid var(--border-color);
-            background: var(--btn-bg);
-            color: var(--btn-text);
+            border: 1px solid #ccc;
+            background: #fff;
+            color: #333;
             cursor: pointer;
             font-size: 14px;
         }
 
         button.btn-primary {
-            background-color: var(--primary-bg);
+            background-color: #0066cc;
             color: white;
             border: none;
         }
 
         button.btn-primary:hover {
-            background-color: var(--primary-hover);
+            background-color: #004fb3;
         }
 
         main {
@@ -98,17 +61,17 @@
             align-items: center;
             gap: 5px;
             margin-bottom: 15px;
-            background: var(--card-bg);
+            background: #fff;
             padding: 10px 15px;
             border-radius: 4px;
-            border: 1px solid var(--border-color);
+            border: 1px solid #ddd;
             font-size: 14px;
         }
 
         .breadcrumb button {
             background: none;
             border: none;
-            color: var(--link-color);
+            color: #0066cc;
             padding: 0;
             font-weight: bold;
             cursor: pointer;
@@ -119,9 +82,9 @@
         }
 
         .table-container {
-            background: var(--card-bg);
+            background: #fff;
             border-radius: 4px;
-            border: 1px solid var(--border-color);
+            border: 1px solid #ddd;
             overflow-x: auto;
         }
 
@@ -134,21 +97,21 @@
 
         th, td {
             padding: 10px 15px;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid #eee;
         }
 
         th {
-            background-color: var(--th-bg);
+            background-color: #fafafa;
             font-weight: bold;
-            color: var(--th-color);
+            color: #555;
         }
 
         tr:hover td {
-            background-color: var(--hover-bg);
+            background-color: #f9f9f9;
         }
 
         .file-link {
-            color: var(--link-color);
+            color: #0066cc;
             text-decoration: none;
             cursor: pointer;
         }
@@ -157,18 +120,23 @@
             text-decoration: underline;
         }
 
+        .action-btns {
+            display: flex;
+            gap: 5px;
+        }
+
         .btn-action {
             padding: 4px 8px;
             font-size: 12px;
             border-radius: 3px;
-            border: 1px solid var(--border-color);
-            background: var(--btn-bg);
+            border: 1px solid #ccc;
+            background: #f0f0f0;
             text-decoration: none;
-            color: var(--btn-text);
+            color: #333;
         }
 
         .btn-action:hover {
-            opacity: 0.85;
+            background: #e0e0e0;
         }
 
         .btn-download {
@@ -178,16 +146,16 @@
         }
 
         .btn-download:hover {
-            opacity: 0.9;
+            background: #218838;
         }
 
         footer {
             text-align: center;
             padding: 15px;
-            background-color: var(--card-bg);
-            border-top: 1px solid var(--border-color);
+            background-color: #fff;
+            border-top: 1px solid #ddd;
             font-size: 13px;
-            color: var(--th-color);
+            color: #666;
         }
 
         /* Modal */
@@ -195,20 +163,18 @@
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.5);
             justify-content: center;
             align-items: center;
         }
 
         .modal-content {
-            background: var(--card-bg);
-            color: var(--text-color);
+            background: #fff;
             padding: 20px;
             border-radius: 5px;
             width: 100%;
             max-width: 500px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
 
         .modal-header {
@@ -227,7 +193,6 @@
             border: none;
             font-size: 18px;
             cursor: pointer;
-            color: var(--text-color);
         }
 
         .dir-list {
@@ -236,14 +201,14 @@
             margin: 10px 0;
             max-height: 150px;
             overflow-y: auto;
-            border: 1px solid var(--border-color);
+            border: 1px solid #ddd;
         }
 
         .dir-item {
             display: flex;
             justify-content: space-between;
             padding: 6px 10px;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid #eee;
             align-items: center;
             font-size: 13px;
         }
@@ -265,13 +230,11 @@
         .add-form input {
             flex: 1;
             padding: 6px;
-            border: 1px solid var(--border-color);
-            background: var(--btn-bg);
-            color: var(--text-color);
+            border: 1px solid #ccc;
             border-radius: 4px;
         }
 
-        /* Preview Modal */
+        /* Preview Modal - Larger */
         #previewModal .modal-content {
             max-width: 1200px;
             width: 92vw;
@@ -298,10 +261,9 @@
 
         #previewContent pre {
             text-align: left;
-            background: var(--pre-bg);
-            color: var(--text-color);
+            background: #f8f8f8;
             padding: 10px;
-            border: 1px solid var(--border-color);
+            border: 1px solid #ddd;
             overflow-x: auto;
             margin: 0;
         }
@@ -315,7 +277,6 @@
             <option value="en">English</option>
             <option value="de">Deutsch</option>
         </select>
-        <button id="themeToggleBtn" onclick="toggleTheme()">🌙 <span data-i18n="darkMode">Karanlık</span></button>
         <button class="btn-primary" onclick="openSettings()" data-i18n="settings">Ayarlar</button>
     </header>
 
@@ -349,7 +310,7 @@
                 <h3 data-i18n="settingsTitle">Paylaşılan Klasörler</h3>
                 <button class="close-btn" onclick="closeSettings()">&times;</button>
             </div>
-            <p data-i18n="settingsDesc" style="font-size: 13px; opacity: 0.8;">Web paneli üzerinden şifresiz paylaşılan klasör yolları:</p>
+            <p data-i18n="settingsDesc" style="font-size: 13px; color: #666;">Web paneli üzerinden şifresiz paylaşılan klasör yolları:</p>
             <ul class="dir-list" id="dirList"></ul>
             <div class="add-form">
                 <input type="text" id="newDirInput" placeholder="Örn: /home/kullanici/Paylasim veya C:\Paylasim">
@@ -387,9 +348,7 @@
                 settingsDesc: "Web paneli üzerinden şifresiz paylaşılan klasör yolları:",
                 add: "Ekle",
                 close: "Kapat",
-                delete: "Sil",
-                darkMode: "Karanlık",
-                lightMode: "Aydınlık"
+                delete: "Sil"
             },
             en: {
                 settings: "Settings",
@@ -406,9 +365,7 @@
                 settingsDesc: "Passwordless shared folder paths via web panel:",
                 add: "Add",
                 close: "Close",
-                delete: "Delete",
-                darkMode: "Dark",
-                lightMode: "Light"
+                delete: "Delete"
             },
             de: {
                 settings: "Einstellungen",
@@ -425,35 +382,13 @@
                 settingsDesc: "Passwortfreie freigegebene Ordnerpfade:",
                 add: "Hinzufügen",
                 close: "Schließen",
-                delete: "Löschen",
-                darkMode: "Dunkel",
-                lightMode: "Hell"
+                delete: "Löschen"
             }
         };
 
         let currentLang = 'tr';
         let currentConfig = { directories: [] };
         let currentDir = '';
-
-        // Theme initialization
-        let currentTheme = localStorage.getItem('pwfe_theme') || 'light';
-        document.documentElement.setAttribute('data-theme', currentTheme);
-
-        function updateThemeButton() {
-            const btn = document.getElementById('themeToggleBtn');
-            if (currentTheme === 'dark') {
-                btn.innerHTML = `☀️ <span data-i18n="lightMode">${translations[currentLang].lightMode}</span>`;
-            } else {
-                btn.innerHTML = `🌙 <span data-i18n="darkMode">${translations[currentLang].darkMode}</span>`;
-            }
-        }
-
-        function toggleTheme() {
-            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', currentTheme);
-            localStorage.setItem('pwfe_theme', currentTheme);
-            updateThemeButton();
-        }
 
         function changeLanguage(lang) {
             currentLang = lang;
@@ -463,7 +398,6 @@
                     el.textContent = translations[lang][key];
                 }
             });
-            updateThemeButton();
             loadFiles(currentDir);
         }
 
@@ -526,7 +460,7 @@
                 tbody.innerHTML = '';
 
                 if (!files || files.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; opacity: 0.7; padding: 20px;">Klasör boş.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #666; padding: 20px;">Klasör boş.</td></tr>`;
                     return;
                 }
 
@@ -651,12 +585,10 @@
             await fetch('/api/config', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                data: JSON.stringify(currentConfig)
+                body: JSON.stringify(currentConfig)
             });
         }
 
-        // Initialize theme button label and load files
-        updateThemeButton();
         loadFiles('');
     </script>
 </body>
