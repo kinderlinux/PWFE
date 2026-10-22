@@ -16,9 +16,9 @@ Panda Web File Explorer (PWFE), yerel ağınızda (7933 portunda) çalışan, ş
 ## Kurulum ve Çalıştırma (Arch Linux / Linux)
 
 ### 1. Derleme (Build)
-**Size direkt derlenmiş bir dosya sunmuyoruz!**
 Go yüklü bir bilgisayarda (veya hedef makinede) projeyi derleyin:
 ```bash
+*Size direkt derlenmiş bir dosya sunmuyoruz!*
 go build -o pwfe main.go
 ```
 
