@@ -16,22 +16,29 @@ Panda Web File Explorer (PWFE), yerel ağınızda (7933 portunda) çalışan, ş
 
 ## Kurulum ve Çalıştırma (Arch Linux / Linux)
 
-### 1. Derleme (Build)
+***Bu kurulum rehberi genel olarak Arch Linux için tasarlanmıştır.***
+
+### 1. Gerekli paketleri yükleme
+
+'''bash
+sudo pacman -Sy git go
+'''
+
+### 2. Derleme (Build)
 **Size direkt derlenmiş bir dosya sunmuyoruz!** Go yüklü bir bilgisayarda (veya hedef makinede) projeyi derleyin:
 ```bash
 go build -o pwfe main.go
 ```
 
-### 2. Konumlandırma ve Çalıştırma
-Dosyaları uygun bir dizine (örneğin `/opt/pwfe`) taşıyın:
+### 3. Konumlandırma ve Çalıştırma
+Dosyaları uygun bir dizine (örneğin `/opt/pwfe` önerilir **çünkü servis bu dizime göre tasarlanmıştır!**) taşıyın:
 ```bash
 sudo mkdir -p /opt/pwfe/static
 sudo cp pwfe /opt/pwfe/
 sudo cp -r static/* /opt/pwfe/static/
-sudo cp config.json /opt/pwfe/
 ```
 
-### 3. Systemd Servisi Olarak Ayarlama (Her Açılışta Başlaması İçin)
+### 4. Systemd Servisi Olarak Ayarlama (Her Açılışta Başlaması İçin)
 Servis dosyasını systemd dizinine kopyalayın:
 ```bash
 sudo cp pwfe.service /etc/systemd/system/
@@ -51,7 +58,7 @@ sudo systemctl status pwfe
 
 Tarayıcınızı açıp yerel ağınızdaki sunucu IP adresine ve **7933** portuna gidin:
 ```text
-http://<SUNUCU_IP>:7933
+http://<CİHAZ_IP>:7933
 ```
 veya yerelde:
 ```text
