@@ -43,8 +43,8 @@ Servis dosyasını systemd dizinine kopyalayın:
 ```bash
 sudo cp pwfe.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable pwfe
-sudo systemctl start pwfe
+sudo systemctl enable --now pwfe
+sudo systemctl start --now pwfe
 ```
 
 Servisin durumunu kontrol etmek için:
