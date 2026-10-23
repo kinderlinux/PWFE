@@ -1,0 +1,730 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f5f0">
+  <meta name="description" content="Panda Web File Explorer — A simple, lightweight web file explorer for your local network.">
+  <title>Panda Web File Explorer — KinderLinux</title>
+
+  <style>
+    :root {
+      --bg: #f5f5f0;
+      --fg: #151815;
+      --muted: #60665e;
+      --line: #252a24;
+      --green: #20492b;
+      --green-light: #e5ebdf;
+      --terminal: #111511;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.6;
+    }
+
+    a { color: inherit; }
+
+    a:focus-visible,
+    button:focus-visible,
+    select:focus-visible {
+      outline: 3px solid #638b62;
+      outline-offset: 3px;
+    }
+
+    .frame {
+      margin: 15px;
+      border: 1px solid var(--line);
+      border-top: 4px solid var(--green);
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 25px;
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--line);
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.5rem;
+      font-weight: 800;
+      text-decoration: none;
+      white-space: nowrap;
+      letter-spacing: -1px;
+    }
+
+    .brand svg {
+      width: 34px;
+      height: 30px;
+      color: var(--green);
+    }
+
+    nav {
+      display: flex;
+      gap: 26px;
+      flex-wrap: wrap;
+      margin-left: 15px;
+    }
+
+    nav a {
+      text-decoration: none;
+      font-weight: 700;
+      font-size: .94rem;
+    }
+
+    nav a:hover { text-decoration: underline; }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-left: auto;
+    }
+
+    select {
+      background: transparent;
+      border: 1px solid var(--line);
+      padding: 10px 8px;
+      color: var(--fg);
+      font-weight: 700;
+      font-size: .85rem;
+    }
+
+    .star-button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      text-decoration: none;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .star-button:hover { background: var(--green-light); }
+
+    .star-count { font-variant-numeric: tabular-nums; }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr 1.05fr;
+      align-items: center;
+      gap: 45px;
+      padding: 48px 30px 55px;
+    }
+
+    .eyebrow {
+      color: var(--green);
+      font-size: .8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    h1 {
+      font-size: clamp(2.4rem, 4.3vw, 4.4rem);
+      letter-spacing: -3px;
+      line-height: 1.04;
+      margin: 14px 0;
+    }
+
+    .hero p {
+      color: var(--muted);
+      font-size: 1.15rem;
+      max-width: 540px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 28px;
+    }
+
+    .button {
+      display: inline-block;
+      padding: 12px 18px;
+      border: 1px solid var(--green);
+      text-decoration: none;
+      font-weight: 800;
+    }
+
+    .button.primary {
+      background: var(--green);
+      color: white;
+    }
+
+    .button.primary:hover { background: #15371e; }
+
+    .button.secondary:hover { background: var(--green-light); }
+
+    .preview {
+      min-width: 0;
+      background: var(--terminal);
+      color: #f1f4ef;
+      border: 1px solid #050705;
+      font-family: Consolas, "Courier New", monospace;
+      box-shadow: 5px 5px 0 #d8ddd4;
+    }
+
+    .preview-head {
+      padding: 13px 16px;
+      color: #a8d889;
+      border-bottom: 1px solid #414941;
+    }
+
+    .preview-body {
+      display: grid;
+      grid-template-columns: 37% 63%;
+      min-height: 245px;
+    }
+
+    .tree {
+      padding: 15px 10px;
+      border-right: 1px solid #414941;
+      color: #d7dfd4;
+      font-size: .85rem;
+    }
+
+    .tree div {
+      padding: 6px 0;
+      white-space: nowrap;
+    }
+
+    .tree .selected { color: #a8d889; }
+    .tree .indent { padding-left: 13px; }
+
+    .files {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .79rem;
+    }
+
+    .files th, .files td {
+      text-align: left;
+      padding: 11px 7px;
+      border-bottom: 1px solid #303730;
+    }
+
+    .files th {
+      color: #bdc6ba;
+      font-weight: 500;
+    }
+
+    .section {
+      padding: 15px 24px 45px;
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(1.7rem, 2.7vw, 2.4rem);
+      letter-spacing: -1.5px;
+      line-height: 1.2;
+    }
+
+    .section-heading p {
+      max-width: 440px;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      border-top: 1px solid var(--line);
+      border-left: 1px solid var(--line);
+    }
+
+    .feature {
+      display: flex;
+      gap: 16px;
+      padding: 23px 19px;
+      min-height: 140px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .feature-icon {
+      flex: 0 0 38px;
+      width: 38px;
+      height: 38px;
+      color: var(--green);
+    }
+
+    .feature h3 {
+      margin: 0 0 6px;
+      font-size: 1.04rem;
+    }
+
+    .feature p {
+      margin: 0;
+      color: var(--muted);
+      font-size: .94rem;
+    }
+
+    .setup {
+      display: grid;
+      grid-template-columns: .8fr 1.2fr;
+      gap: 35px;
+      padding: 30px 24px 40px;
+      border-top: 1px solid var(--line);
+    }
+
+    .setup p { color: var(--muted); }
+
+    .codebox {
+      border: 1px solid var(--line);
+      background: #e9ece5;
+      padding: 18px;
+      overflow-x: auto;
+    }
+
+    .codebox pre {
+      margin: 0;
+      font: .9rem/1.8 Consolas, "Courier New", monospace;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .readme-link {
+      display: inline-block;
+      margin-top: 15px;
+      font-weight: 700;
+    }
+
+    footer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 18px;
+      border-top: 1px solid var(--line);
+      text-align: center;
+      flex-wrap: wrap;
+    }
+
+    .footer-project { font-weight: 800; }
+    .footer-author { color: var(--muted); }
+    .heart { color: #b32c35; }
+
+    @media (max-width: 1000px) {
+      header { gap: 15px; }
+      nav { order: 3; width: 100%; margin-left: 0; }
+      .hero { grid-template-columns: 1fr; }
+      .preview { max-width: 800px; width: 100%; }
+      .section-heading { align-items: flex-start; flex-direction: column; }
+      .features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 620px) {
+      .frame { margin: 7px; }
+      header { padding: 13px; }
+      .brand { font-size: 1.25rem; }
+      .header-right { width: 100%; margin-left: 0; }
+      .star-button { margin-left: auto; }
+      nav { gap: 12px 20px; }
+      nav a { font-size: .88rem; }
+      .hero { padding: 32px 15px 38px; gap: 30px; }
+      h1 { letter-spacing: -1.5px; }
+      .preview-body { grid-template-columns: 1fr; }
+      .tree { display: none; }
+      .files { font-size: .72rem; }
+      .files th, .files td { padding: 10px 5px; }
+      .section { padding: 12px 14px 30px; }
+      .features { grid-template-columns: 1fr; }
+      .feature { min-height: auto; padding: 19px 14px; }
+      .setup { grid-template-columns: 1fr; padding: 25px 14px 30px; gap: 15px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="frame">
+
+  <header id="top">
+    <a class="brand" href="#top" aria-label="Panda Web File Explorer">
+      <svg viewBox="0 0 40 32" fill="none" aria-hidden="true">
+        <path d="M2 9h13l4 5h19v16H2z" stroke="currentColor" stroke-width="2.5"/>
+        <path d="M2 9V3h12l5 6" stroke="currentColor" stroke-width="2.5"/>
+      </svg>
+      <span>PWFE</span>
+    </a>
+
+    <nav aria-label="Navigation">
+      <a href="#features" data-i18n="navFeatures">Özellikler</a>
+      <a href="#setup" data-i18n="navSetup">Kurulum</a>
+      <a href="#usage" data-i18n="navUsage">Kullanım</a>
+    </nav>
+
+    <div class="header-right">
+      <label class="sr-only" for="language" data-i18n="languageLabel">Dil seçimi</label>
+      <select id="language" aria-label="Language">
+        <option value="tr">Türkçe</option>
+        <option value="en">English</option>
+        <option value="de">Deutsch</option>
+      </select>
+
+      <a class="star-button"
+         href="https://github.com/kinderlinux/PWFE"
+         target="_blank" rel="noopener noreferrer">
+        <span aria-hidden="true">★</span>
+        <span data-i18n="starLabel">GitHub’da yıldızla</span>
+        <span class="star-count" id="star-count">…</span>
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <div class="eyebrow" data-i18n="eyebrow">Yerel ağın. Dosyaların. Kontrol sende.</div>
+        <h1 data-i18n="heroTitle">Dosyalarına tarayıcıdan eriş.</h1>
+        <p data-i18n="heroText">
+          Yerel ağında çalışan, hafif ve sade bir dosya gezgini.
+          Dosyalarını web arayüzünden görüntüle ve indir.
+        </p>
+
+        <div class="actions">
+          <a class="button primary" href="https://github.com/kinderlinux/PWFE"
+             target="_blank" rel="noopener noreferrer" data-i18n="repoButton">
+            GitHub deposu ↗
+          </a>
+          <a class="button secondary" href="#features" data-i18n="featuresButton">
+            Özellikleri keşfet ↓
+          </a>
+        </div>
+      </div>
+
+      <div class="preview" role="img" data-i18n-aria="previewLabel" aria-label="Örnek dosya gezgini">
+        <div class="preview-head">http://localhost:7933</div>
+        <div class="preview-body">
+          <div class="tree">
+            <div class="selected">▼ ▱ sharing</div>
+            <div class="indent">├─ ▱ Documents</div>
+            <div class="indent">├─ ▱ Pictures</div>
+            <div class="indent">├─ ▱ Videos</div>
+            <div class="indent">└─ ▱ Music</div>
+          </div>
+          <table class="files">
+            <thead>
+              <tr>
+                <th data-i18n="fileName">Ad</th>
+                <th data-i18n="fileType">Tür</th>
+                <th data-i18n="fileSize">Boyut</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>presentation.pdf</td><td>pdf</td><td>2.35 MB</td></tr>
+              <tr><td>budget.xlsx</td><td>xlsx</td><td>18.7 KB</td></tr>
+              <tr><td>photo.jpg</td><td>jpg</td><td>1.21 MB</td></tr>
+              <tr><td>notes.txt</td><td>txt</td><td>1.07 KB</td></tr>
+              <tr><td>video.mp4</td><td>mp4</td><td>45.6 MB</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="features">
+      <div class="section-heading">
+        <h2 data-i18n="featuresTitle">Gereken her şey. Fazlası değil.</h2>
+        <p data-i18n="featuresIntro">Dosya paylaşımı için sade bir arayüz ve temel araçlar.</p>
+      </div>
+
+      <div class="features">
+        <article class="feature">
+          <svg class="feature-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+            <path d="M5 31a16 16 0 1 1 30 0" stroke="currentColor" stroke-width="2.5"/>
+            <path d="m20 22 9-10" stroke="currentColor" stroke-width="2.5"/>
+            <circle cx="20" cy="22" r="2.5" fill="currentColor"/>
+          </svg>
+          <div>
+            <h3 data-i18n="f1Title">Hafif ve hızlı</h3>
+            <p data-i18n="f1Text">Go ile geliştirilmiştir; düşük kaynak tüketimi hedefler.</p>
+          </div>
+        </article>
+
+        <article class="feature">
+          <svg class="feature-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+            <path d="M3 11h13l4 5h17v20H3z" stroke="currentColor" stroke-width="2.5"/>
+            <path d="M3 11V5h12l5 6" stroke="currentColor" stroke-width="2.5"/>
+          </svg>
+          <div>
+            <h3 data-i18n="f2Title">Kolay klasör paylaşımı</h3>
+            <p data-i18n="f2Text">Web panelinden paylaşılacak klasörleri yönet.</p>
+          </div>
+        </article>
+
+        <article class="feature">
+          <svg class="feature-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+            <path d="M20 3v24m-9-9 9 9 9-9M5 28v8h30v-8" stroke="currentColor" stroke-width="2.5"/>
+          </svg>
+          <div>
+            <h3 data-i18n="f3Title">Dosya indirme</h3>
+            <p data-i18n="f3Text">Dosyalara tarayıcıdan eriş ve indir.</p>
+          </div>
+        </article>
+
+        <article class="feature">
+          <svg class="feature-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+            <path d="M8 4h24v32H8zM13 12h14M13 20h14M13 28h10" stroke="currentColor" stroke-width="2.5"/>
+          </svg>
+          <div>
+            <h3 data-i18n="f4Title">Dosya ayrıntıları</h3>
+            <p data-i18n="f4Text">Dosya türü, boyutu ve değiştirilme bilgilerini görüntüle.</p>
+          </div>
+        </article>
+
+        <article class="feature">
+          <svg class="feature-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+            <circle cx="20" cy="20" r="17" stroke="currentColor" stroke-width="2.5"/>
+            <path d="M3 20h34M20 3c5 5 7 11 7 17s-2 12-7 17c-5-5-7-11-7-17s2-12 7-17Z" stroke="currentColor" stroke-width="2.5"/>
+          </svg>
+          <div>
+            <h3 data-i18n="f5Title">3 dil seçeneği</h3>
+            <p data-i18n="f5Text">Türkçe, İngilizce ve Almanca arayüz seçenekleri.</p>
+          </div>
+        </article>
+
+        <article class="feature">
+          <svg class="feature-icon" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+            <path d="m16 3 8 0 1 5 4 2 4-2 4 7-4 3v5l4 3-4 7-5-2-4 2-1 4h-8l-1-5-4-2-4 2-4-7 4-3v-5l-4-3 4-7 5 2 4-2z" stroke="currentColor" stroke-width="2.2"/>
+            <circle cx="20" cy="20" r="5" stroke="currentColor" stroke-width="2.2"/>
+          </svg>
+          <div>
+            <h3 data-i18n="f6Title">Linux servis desteği</h3>
+            <p data-i18n="f6Text">systemd ile açılışta otomatik çalıştırma imkânı.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="setup" id="setup">
+      <div>
+        <div class="eyebrow" data-i18n="setupEyebrow">Başlangıç</div>
+        <h2 data-i18n="setupTitle">Kurulum ve kaynak kodu</h2>
+        <p data-i18n="setupText">
+          Kurulum adımları, gereksinimler ve ayrıntılar için GitHub deposundaki README dosyasını incele.
+        </p>
+      </div>
+
+      <div class="codebox" id="usage">
+        <pre>git clone https://github.com/kinderlinux/PWFE.git
+cd PWFE
+
+# See README.md for setup and usage</pre>
+        <a class="readme-link"
+           href="https://github.com/kinderlinux/PWFE#readme"
+           target="_blank" rel="noopener noreferrer"
+           data-i18n="readmeLink">README dosyasını aç ↗</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span class="footer-project">Panda Web File Explorer</span>
+    <span aria-hidden="true">—</span>
+    <span class="footer-author" data-i18n="footerBy">KinderLinux tarafından</span>
+    <span class="heart" aria-label="love">♥</span>
+  </footer>
+</div>
+
+<script>
+  const translations = {
+    tr: {
+      pageTitle: "Panda Web File Explorer — KinderLinux",
+      navFeatures: "Özellikler",
+      navSetup: "Kurulum",
+      navUsage: "Kullanım",
+      languageLabel: "Dil seçimi",
+      starLabel: "GitHub’da yıldızla",
+      eyebrow: "Yerel ağın. Dosyaların. Kontrol sende.",
+      heroTitle: "Dosyalarına tarayıcıdan eriş.",
+      heroText: "Yerel ağında çalışan, hafif ve sade bir dosya gezgini. Dosyalarını web arayüzünden görüntüle ve indir.",
+      repoButton: "GitHub deposu ↗",
+      featuresButton: "Özellikleri keşfet ↓",
+      previewLabel: "Dosya listesi ve klasör ağacı içeren örnek dosya gezgini",
+      fileName: "Ad",
+      fileType: "Tür",
+      fileSize: "Boyut",
+      featuresTitle: "Gereken her şey. Fazlası değil.",
+      featuresIntro: "Dosya paylaşımı için sade bir arayüz ve temel araçlar.",
+      f1Title: "Hafif ve hızlı",
+      f1Text: "Go ile geliştirilmiştir; düşük kaynak tüketimi hedefler.",
+      f2Title: "Kolay klasör paylaşımı",
+      f2Text: "Web panelinden paylaşılacak klasörleri yönet.",
+      f3Title: "Dosya indirme",
+      f3Text: "Dosyalara tarayıcıdan eriş ve indir.",
+      f4Title: "Dosya ayrıntıları",
+      f4Text: "Dosya türü, boyutu ve değiştirilme bilgilerini görüntüle.",
+      f5Title: "3 dil seçeneği",
+      f5Text: "Türkçe, İngilizce ve Almanca arayüz seçenekleri.",
+      f6Title: "Linux servis desteği",
+      f6Text: "systemd ile açılışta otomatik çalıştırma imkânı.",
+      setupEyebrow: "Başlangıç",
+      setupTitle: "Kurulum ve kaynak kodu",
+      setupText: "Kurulum adımları, gereksinimler ve ayrıntılar için GitHub deposundaki README dosyasını incele.",
+      readmeLink: "README dosyasını aç ↗",
+      footerBy: "KinderLinux tarafından"
+    },
+
+    en: {
+      pageTitle: "Panda Web File Explorer — KinderLinux",
+      navFeatures: "Features",
+      navSetup: "Installation",
+      navUsage: "Usage",
+      languageLabel: "Language",
+      starLabel: "Star on GitHub",
+      eyebrow: "Your network. Your files. Your control.",
+      heroTitle: "Access your files from a browser.",
+      heroText: "A lightweight, simple file explorer for your local network. View and download your files through a web interface.",
+      repoButton: "GitHub repository ↗",
+      featuresButton: "Explore features ↓",
+      previewLabel: "Example file explorer with a file list and folder tree",
+      fileName: "Name",
+      fileType: "Type",
+      fileSize: "Size",
+      featuresTitle: "Everything you need. Nothing more.",
+      featuresIntro: "A straightforward interface with essential tools for file sharing.",
+      f1Title: "Lightweight and fast",
+      f1Text: "Built with Go and designed for low resource usage.",
+      f2Title: "Easy folder sharing",
+      f2Text: "Manage shared folders through the web panel.",
+      f3Title: "File downloads",
+      f3Text: "Access and download files from your browser.",
+      f4Title: "File details",
+      f4Text: "View file types, sizes and modification information.",
+      f5Title: "Three languages",
+      f5Text: "Choose between Turkish, English and German.",
+      f6Title: "Linux service support",
+      f6Text: "Can be configured to start automatically with systemd.",
+      setupEyebrow: "Get started",
+      setupTitle: "Installation and source code",
+      setupText: "Check the repository README for installation steps, requirements and further details.",
+      readmeLink: "Open README ↗",
+      footerBy: "by KinderLinux"
+    },
+
+    de: {
+      pageTitle: "Panda Web File Explorer — KinderLinux",
+      navFeatures: "Funktionen",
+      navSetup: "Installation",
+      navUsage: "Nutzung",
+      languageLabel: "Sprache",
+      starLabel: "Auf GitHub markieren",
+      eyebrow: "Dein Netzwerk. Deine Dateien. Deine Kontrolle.",
+      heroTitle: "Greife über den Browser auf deine Dateien zu.",
+      heroText: "Ein schlanker, einfacher Dateibrowser für dein lokales Netzwerk. Dateien über eine Weboberfläche ansehen und herunterladen.",
+      repoButton: "GitHub-Repository ↗",
+      featuresButton: "Funktionen entdecken ↓",
+      previewLabel: "Beispiel eines Dateibrowsers mit Dateiliste und Ordnerstruktur",
+      fileName: "Name",
+      fileType: "Typ",
+      fileSize: "Größe",
+      featuresTitle: "Alles Nötige. Nicht mehr.",
+      featuresIntro: "Eine einfache Oberfläche mit den wichtigsten Werkzeugen zur Dateifreigabe.",
+      f1Title: "Schlank und schnell",
+      f1Text: "Mit Go entwickelt und auf geringen Ressourcenverbrauch ausgelegt.",
+      f2Title: "Ordner einfach freigeben",
+      f2Text: "Freigegebene Ordner über das Webpanel verwalten.",
+      f3Title: "Dateien herunterladen",
+      f3Text: "Dateien direkt im Browser aufrufen und herunterladen.",
+      f4Title: "Dateiinformationen",
+      f4Text: "Dateityp, Größe und Änderungsinformationen anzeigen.",
+      f5Title: "Drei Sprachen",
+      f5Text: "Wähle zwischen Türkisch, Englisch und Deutsch.",
+      f6Title: "Linux-Dienstunterstützung",
+      f6Text: "Kann so eingerichtet werden, dass systemd den Dienst automatisch startet.",
+      setupEyebrow: "Erste Schritte",
+      setupTitle: "Installation und Quellcode",
+      setupText: "Die README im GitHub-Repository enthält Installationsschritte, Voraussetzungen und weitere Informationen.",
+      readmeLink: "README öffnen ↗",
+      footerBy: "von KinderLinux"
+    }
+  };
+
+  const languageSelect = document.getElementById("language");
+
+  function setLanguage(language) {
+    const dictionary = translations[language] || translations.tr;
+
+    document.documentElement.lang = language;
+    document.title = dictionary.pageTitle;
+
+    document.querySelectorAll("[data-i18n]").forEach(element => {
+      const key = element.dataset.i18n;
+      if (dictionary[key]) element.textContent = dictionary[key];
+    });
+
+    document.querySelectorAll("[data-i18n-aria]").forEach(element => {
+      const key = element.dataset.i18nAria;
+      if (dictionary[key]) element.setAttribute("aria-label", dictionary[key]);
+    });
+
+    try {
+      localStorage.setItem("pwfe-language", language);
+    } catch (_) {}
+  }
+
+  languageSelect.addEventListener("change", event => {
+    setLanguage(event.target.value);
+  });
+
+  try {
+    const savedLanguage = localStorage.getItem("pwfe-language");
+    if (savedLanguage && translations[savedLanguage]) {
+      languageSelect.value = savedLanguage;
+    }
+  } catch (_) {}
+
+  setLanguage(languageSelect.value);
+
+  // Fetch the current repository star count from GitHub's public API.
+  (async function loadStars() {
+    const countElement = document.getElementById("star-count");
+
+    try {
+      const response = await fetch(
+        "https://api.github.com/repos/kinderlinux/PWFE",
+        { headers: { Accept: "application/vnd.github+json" } }
+      );
+
+      if (!response.ok) throw new Error("GitHub API unavailable");
+
+      const repository = await response.json();
+      countElement.textContent =
+        Number(repository.stargazers_count).toLocaleString();
+      countElement.title = repository.stargazers_count + " GitHub stars";
+    } catch (_) {
+      countElement.textContent = "★";
+      countElement.title = "Star count unavailable";
+    }
+  })();
+</script>
+</body>
+</html>
