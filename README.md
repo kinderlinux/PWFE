@@ -20,9 +20,9 @@ Panda Web File Explorer (PWFE), yerel ağınızda (7933 portunda) çalışan, ş
 
 ### 1. Gerekli paketleri yükleme
 
-'''bash
+```bash
 sudo pacman -Sy git go
-'''
+```
 
 ### 2. Derleme (Build)
 **Size direkt derlenmiş bir dosya sunmuyoruz!** Go yüklü bir bilgisayarda (veya hedef makinede) projeyi derleyin:
