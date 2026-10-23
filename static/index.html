@@ -256,6 +256,11 @@
             overflow-y: auto;
             margin-bottom: 15px;
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
         }
 
         #previewContent img {
@@ -294,6 +299,24 @@
 
     <main>
         <div class="breadcrumb" id="breadcrumb"></div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 10px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button id="btnBack" class="btn-action" onclick="goParentDir()" style="display: none;" data-i18n="back">⬅ Geri</button>
+                <input type="text" id="searchInput" placeholder="Bulunduğun klasörde ara..." oninput="filterFiles()" style="padding: 6px 12px; border-radius: 4px; border: 1px solid #444; background: #252525; color: #f5f5f5; width: 220px; font-size: 14px;">
+            </div>
+            <div>
+                <select id="sortSelect" onchange="sortFiles()" style="padding: 6px 12px; border-radius: 4px; border: 1px solid #444; background: #252525; color: #f5f5f5; font-size: 14px;">
+                    <option value="name_asc" data-i18n="sortNameAsc">Ad (A-Z)</option>
+                    <option value="name_desc" data-i18n="sortNameDesc">Ad (Z-A)</option>
+                    <option value="date_desc" data-i18n="sortDateDesc">Tarih (Yeni > Eski)</option>
+                    <option value="date_asc" data-i18n="sortDateAsc">Tarih (Eski > Yeni)</option>
+                    <option value="size_desc" data-i18n="sortSizeDesc">Boyut (Büyük > Küçük)</option>
+                    <option value="size_asc" data-i18n="sortSizeAsc">Boyut (Küçük > Büyük)</option>
+                    <option value="type" data-i18n="sortType">Tür</option>
+                </select>
+            </div>
+        </div>
 
         <div class="table-container">
             <table>
@@ -360,7 +383,18 @@
                 settingsDesc: "Web paneli üzerinden şifresiz paylaşılan klasör yolları:",
                 add: "Ekle",
                 close: "Kapat",
-                delete: "Sil"
+                delete: "Sil",
+                back: "⬅ Geri",
+                searchPlaceholder: "Bulunduğun klasörde ara...",
+                emptyFolder: "Klasör boş veya arama sonucu bulunamadı.",
+                sortNameAsc: "Ad (A-Z)",
+                sortNameDesc: "Ad (Z-A)",
+                sortDateDesc: "Tarih (Yeni > Eski)",
+                sortDateAsc: "Tarih (Eski > Yeni)",
+                sortSizeDesc: "Boyut (Büyük > Küçük)",
+                sortSizeAsc: "Boyut (Küçük > Büyük)",
+                sortType: "Tür",
+                open: "Aç"
             },
             en: {
                 settings: "Settings",
@@ -377,7 +411,18 @@
                 settingsDesc: "Passwordless shared folder paths via web panel:",
                 add: "Add",
                 close: "Close",
-                delete: "Delete"
+                delete: "Delete",
+                back: "⬅ Back",
+                searchPlaceholder: "Search in current folder...",
+                emptyFolder: "Folder is empty or no search results found.",
+                sortNameAsc: "Name (A-Z)",
+                sortNameDesc: "Name (Z-A)",
+                sortDateDesc: "Date (New > Old)",
+                sortDateAsc: "Date (Old > New)",
+                sortSizeDesc: "Size (Large > Small)",
+                sortSizeAsc: "Size (Small > Large)",
+                sortType: "Type",
+                open: "Open"
             },
             de: {
                 settings: "Einstellungen",
@@ -394,13 +439,25 @@
                 settingsDesc: "Passwortfreie freigegebene Ordnerpfade:",
                 add: "Hinzufügen",
                 close: "Schließen",
-                delete: "Löschen"
+                delete: "Löschen",
+                back: "⬅ Zurück",
+                searchPlaceholder: "Im aktuellen Ordner suchen...",
+                emptyFolder: "Ordner ist leer oder keine Suchergebnisse.",
+                sortNameAsc: "Name (A-Z)",
+                sortNameDesc: "Name (Z-A)",
+                sortDateDesc: "Datum (Neu > Alt)",
+                sortDateAsc: "Datum (Alt > Neu)",
+                sortSizeDesc: "Größe (Groß > Klein)",
+                sortSizeAsc: "Größe (Klein > Groß)",
+                sortType: "Typ",
+                open: "Öffnen"
             }
         };
 
         let currentLang = 'tr';
         let currentConfig = { directories: [] };
         let currentDir = '';
+        let allFiles = [];
 
         function changeLanguage(lang) {
             currentLang = lang;
@@ -410,7 +467,11 @@
                     el.textContent = translations[lang][key];
                 }
             });
-            loadFiles(currentDir);
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.placeholder = translations[lang].searchPlaceholder;
+            }
+            filterAndRenderFiles();
         }
 
         function formatSize(bytes) {
@@ -440,9 +501,14 @@
             const bc = document.getElementById('breadcrumb');
             bc.innerHTML = `<button onclick="loadFiles('')">🏠 <span>${translations[currentLang].root}</span></button>`;
             
+            const btnBack = document.getElementById('btnBack');
+            if (btnBack) {
+                btnBack.style.display = dir ? 'inline-block' : 'none';
+            }
+
             if (!dir) return;
 
-            const sep = dir.includes('\\') ? '\\' : '/';
+            const sep = dir.includes('/') ? '/' : '\\';
             const parts = dir.split(sep).filter(Boolean);
             
             let accumulated = '';
@@ -455,61 +521,139 @@
                     accumulated = accumulated ? accumulated + sep + part : part;
                 }
                 
-                bc.innerHTML += ` / <button onclick="loadFiles('${accumulated.replace(/\\/g, '\\\\')}')">${part}</button>`;
+                const cleanAccumulated = accumulated.replace(/\\/g, '/');
+                bc.innerHTML += ` / <button onclick="loadFiles('${cleanAccumulated}')">${part}</button>`;
             });
         }
 
+        function goParentDir() {
+            if (!currentDir) return;
+            const sep = currentDir.includes('/') ? '/' : '\\';
+            const lastSlash = currentDir.lastIndexOf(sep);
+            if (lastSlash === -1) {
+                loadFiles('');
+                return;
+            }
+            let parent = currentDir.substring(0, lastSlash);
+            if (/^[A-Za-z]:$/.test(parent)) {
+                parent = parent + sep;
+            }
+            if (parent === currentDir) {
+                loadFiles('');
+                return;
+            }
+            loadFiles(parent);
+        }
+
         async function loadFiles(dir) {
-            currentDir = dir;
+            currentDir = (dir || '').replace(/\\/g, '/');
             await fetchConfig();
-            renderBreadcrumb(dir);
+            renderBreadcrumb(currentDir);
+
+            // Clear search input on folder change
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) searchInput.value = '';
 
             try {
-                const res = await fetch(`/api/files?dir=${encodeURIComponent(dir)}`);
+                const res = await fetch(`/api/files?dir=${encodeURIComponent(currentDir)}`);
                 const files = await res.json();
                 
-                const tbody = document.getElementById('fileTableBody');
-                tbody.innerHTML = '';
-
-                if (!files || files.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #bdbdbd; padding: 20px;">Klasör boş.</td></tr>`;
-                    return;
-                }
-
-                files.forEach(file => {
-                    const tr = document.createElement('tr');
-                    
-                    let icon = file.isDir ? '📁' : '📄';
-                    const ext = (file.ext || '').toLowerCase();
-
-                    let actionHtml = '';
-                    if (file.isDir) {
-                        actionHtml = `<button class="btn-action" onclick="loadFiles('${file.path.replace(/\\/g, '\\\\')}')">Aç</button>`;
-                    } else {
-                        const canPreview = ['png', 'jpg', 'jpeg', 'gif', 'txt', 'md', 'log', 'json', 'xml', 'html', 'htm', 'pdf'].includes(ext);
-                        if (canPreview) {
-                            actionHtml += `<button class="btn-action" onclick="openPreview('${file.path.replace(/\\/g, '\\\\')}', '${file.name}')">${translations[currentLang].preview}</button> `;
-                        }
-                        actionHtml += `<a class="btn-action btn-download" href="/api/download?path=${encodeURIComponent(file.path)}" target="_blank">${translations[currentLang].download}</a>`;
-                    }
-
-                    tr.innerHTML = `
-                        <td>
-                            <a class="file-link" onclick="${file.isDir ? `loadFiles('${file.path.replace(/\\/g, '\\\\')}')` : `openPreview('${file.path.replace(/\\/g, '\\\\')}', '${file.name}')`}">
-                                ${icon} ${file.name}
-                            </a>
-                        </td>
-                        <td>${file.ext}</td>
-                        <td>${formatSize(file.size)}</td>
-                        <td>${file.modTime}</td>
-                        <td>${actionHtml}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+                allFiles = files || [];
+                filterAndRenderFiles();
 
             } catch (err) {
                 console.error("Hata:", err);
+                allFiles = [];
+                filterAndRenderFiles();
             }
+        }
+
+        function filterFiles() {
+            filterAndRenderFiles();
+        }
+
+        function sortFiles() {
+            filterAndRenderFiles();
+        }
+
+        function filterAndRenderFiles() {
+            const searchInput = document.getElementById('searchInput');
+            const query = searchInput ? searchInput.value.toLowerCase() : '';
+            const sortSelect = document.getElementById('sortSelect');
+            const sortBy = sortSelect ? sortSelect.value : 'name_asc';
+
+            let filtered = allFiles.filter(file => {
+                return file.name.toLowerCase().includes(query);
+            });
+
+            filtered.sort((a, b) => {
+                if (a.isDir !== b.isDir) {
+                    return a.isDir ? -1 : 1;
+                }
+
+                switch (sortBy) {
+                    case 'name_asc':
+                        return a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'});
+                    case 'name_desc':
+                        return b.name.localeCompare(a.name, undefined, {numeric: true, sensitivity: 'base'});
+                    case 'date_desc':
+                        return new Date(b.modTime) - new Date(a.modTime);
+                    case 'date_asc':
+                        return new Date(a.modTime) - new Date(b.modTime);
+                    case 'size_desc':
+                        return b.size - a.size;
+                    case 'size_asc':
+                        return a.size - b.size;
+                    case 'type':
+                        return (a.ext || '').localeCompare(b.ext || '');
+                    default:
+                        return a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'});
+                }
+            });
+
+            renderTable(filtered);
+        }
+
+        function renderTable(files) {
+            const tbody = document.getElementById('fileTableBody');
+            tbody.innerHTML = '';
+
+            if (!files || files.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #bdbdbd; padding: 20px;">${translations[currentLang].emptyFolder}</td></tr>`;
+                return;
+            }
+
+            files.forEach(file => {
+                const tr = document.createElement('tr');
+                
+                let icon = file.isDir ? '📁' : '📄';
+                const ext = (file.ext || '').toLowerCase();
+                const safePath = (file.path || '').replace(/\\/g, '/');
+
+                let actionHtml = '';
+                if (file.isDir) {
+                    actionHtml = `<button class="btn-action" onclick="loadFiles('${safePath}')">${translations[currentLang].open}</button>`;
+                } else {
+                    const canPreview = ['png', 'jpg', 'jpeg', 'gif', 'txt', 'md', 'log', 'json', 'xml', 'html', 'htm', 'pdf', 'css', 'js'].includes(ext);
+                    if (canPreview) {
+                        actionHtml += `<button class="btn-action" onclick="openPreview('${safePath}', '${file.name}')">${translations[currentLang].preview}</button> `;
+                    }
+                    actionHtml += `<a class="btn-action btn-download" href="/api/download?path=${encodeURIComponent(file.path)}" target="_blank">${translations[currentLang].download}</a>`;
+                }
+
+                tr.innerHTML = `
+                    <td>
+                        <a class="file-link" onclick="${file.isDir ? `loadFiles('${safePath}')` : `openPreview('${safePath}', '${file.name}')`}">
+                            ${icon} ${file.name}
+                        </a>
+                    </td>
+                    <td>${file.ext}</td>
+                    <td>${file.size === 0 && file.isDir ? '-' : formatSize(file.size)}</td>
+                    <td>${file.modTime}</td>
+                    <td>${actionHtml}</td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
         async function openPreview(path, name) {
@@ -533,8 +677,10 @@
                 } catch(e) {
                     contentDiv.innerHTML = 'Önizleme yüklenemedi.';
                 }
+            } else if (['odt', 'ods', 'odp'].includes(ext)) {
+                contentDiv.innerHTML = `<p style="margin: 10px 0;">ODF (.odt, .ods, .odp) dosyaları tarayıcıda doğrudan önizlenemez. LibreOffice veya Office ile açmak için indirebilirsiniz.</p><a class="btn-action btn-download" href="/api/download?path=${encodeURIComponent(path)}" target="_blank">${translations[currentLang].download}</a>`;
             } else {
-                contentDiv.innerHTML = `<p style="margin: 10px 0;">Bu dosya türü doğrudan önizlenemez.</p><a class="btn-action btn-download" href="/api/download?path=${encodeURIComponent(path)}" target="_blank">${translations[currentLang].download} İndir</a>`;
+                contentDiv.innerHTML = `<p style="margin: 10px 0;">Bu dosya türü doğrudan önizlenemez.</p><a class="btn-action btn-download" href="/api/download?path=${encodeURIComponent(path)}" target="_blank">${translations[currentLang].download}</a>`;
             }
         }
 

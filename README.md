@@ -10,6 +10,7 @@ Panda Web File Explorer (PWFE), yerel ağınızda (7933 portunda) çalışan, ş
 - 📋 **Detaylı Dosya Bilgileri:** Dosya türleri (uzantıları), boyutları ve son değiştirme tarihleri.
 - 🌐 **3 Dil Desteği:** Türkçe, İngilizce ve Almanca dil seçenekleri (anlık geçiş).
 - ⚙️ **Systemd Servis Desteği:** Linux sistemlerde her açılışta otomatik başlama.
+- 🔎 **Detaylı Listeleme ve Arama Özelliği** Klasör içinde arama ve sıralama özelliği eklendi.
 
 ---
 
