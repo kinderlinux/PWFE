@@ -949,8 +949,6 @@
       animation: marquee 34s linear infinite;
     }
 
-    .marquee:hover .marquee__track { animation-play-state: paused; }
-
     .marquee__group {
       display: flex;
       align-items: center;
@@ -1862,8 +1860,9 @@
     html[data-theme="dark"] .explorer__main { background: var(--paper-raised); }
     html[data-theme="dark"] .file-table td { border-bottom-color: var(--line); }
     html[data-theme="dark"] .ftype { color: var(--on-acid); }
-    html[data-theme="dark"] .folder-list li.is-active,
-    html[data-theme="dark"] .hero h1 .mark { color: var(--on-acid); }
+    html[data-theme="dark"] .folder-list li.is-active { color: var(--on-acid); }
+    html[data-theme="dark"] .hero h1 .mark { color: #f2eee4; }
+    html[data-theme="dark"] .hero h1 .mark::before { background: var(--moss-solid); }
     html[data-theme="dark"] .folder-list li.is-active { border-color: var(--on-acid); }
     html[data-theme="dark"] .mini-check::after { border-color: var(--on-acid); }
     html[data-theme="dark"] .note {
