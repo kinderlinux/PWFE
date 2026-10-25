@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
 	"sort"
 	"strings"
+	"time"
 )
 
 type Config struct {
@@ -100,7 +100,7 @@ func isAllowedPath(targetPath string) bool {
 		}
 
 		rel, err := filepath.Rel(dirCmp, targetCmp)
-		if err == nil && !strings.HasPrefix(rel, "..") {
+		if err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
 			return true
 		}
 	}
@@ -139,7 +139,7 @@ func handleSaveConfig(w http.ResponseWriter, r *http.Request) {
 
 func handleListFiles(w http.ResponseWriter, r *http.Request) {
 	dirPath := r.URL.Query().Get("dir")
-	
+
 	if currentConfig.Directories == nil {
 		currentConfig.Directories = []string{}
 	}
@@ -150,7 +150,7 @@ func handleListFiles(w http.ResponseWriter, r *http.Request) {
 			info, err := os.Stat(d)
 			var modTime string = ""
 			if err == nil {
-				modTime = info.ModTime().Format("2006-01-02 15:04:05")
+				modTime = info.ModTime().Format(time.RFC3339)
 			}
 			items = append(items, map[string]interface{}{
 				"name":    filepath.Base(d),
@@ -166,11 +166,7 @@ func handleListFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	decodedPath, err := url.QueryUnescape(dirPath)
-	if err != nil {
-		http.Error(w, "Invalid path", http.StatusBadRequest)
-		return
-	}
+	decodedPath := dirPath
 
 	if !isAllowedPath(decodedPath) {
 		http.Error(w, "Access denied: Path not in allowed list", http.StatusForbidden)
@@ -204,7 +200,7 @@ func handleListFiles(w http.ResponseWriter, r *http.Request) {
 			"name":    entry.Name(),
 			"path":    fullPath,
 			"size":    info.Size(),
-			"modTime": info.ModTime().Format("2006-01-02 15:04:05"),
+			"modTime": info.ModTime().Format(time.RFC3339),
 			"isDir":   entry.IsDir(),
 			"ext":     strings.ToUpper(ext),
 		})
@@ -227,11 +223,7 @@ func handleListFiles(w http.ResponseWriter, r *http.Request) {
 
 func handleDownload(w http.ResponseWriter, r *http.Request) {
 	filePath := r.URL.Query().Get("path")
-	decodedPath, err := url.QueryUnescape(filePath)
-	if err != nil {
-		http.Error(w, "Invalid path", http.StatusBadRequest)
-		return
-	}
+	decodedPath := filePath
 
 	if !isAllowedPath(decodedPath) {
 		http.Error(w, "Access denied", http.StatusForbidden)
@@ -250,11 +242,7 @@ func handleDownload(w http.ResponseWriter, r *http.Request) {
 
 func handlePreview(w http.ResponseWriter, r *http.Request) {
 	filePath := r.URL.Query().Get("path")
-	decodedPath, err := url.QueryUnescape(filePath)
-	if err != nil {
-		http.Error(w, "Invalid path", http.StatusBadRequest)
-		return
-	}
+	decodedPath := filePath
 
 	if !isAllowedPath(decodedPath) {
 		http.Error(w, "Access denied", http.StatusForbidden)

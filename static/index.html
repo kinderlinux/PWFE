@@ -394,7 +394,14 @@
                 sortSizeDesc: "Boyut (Büyük > Küçük)",
                 sortSizeAsc: "Boyut (Küçük > Büyük)",
                 sortType: "Tür",
-                open: "Aç"
+                open: "Aç",
+                dirPlaceholder: "Örn: /home/kullanici/Paylasim veya C:\\Paylasim",
+                loadError: "Klasör yüklenemedi.",
+                saveError: "Ayarlar kaydedilemedi.",
+                previewLoading: "Yükleniyor...",
+                previewError: "Önizleme yüklenemedi.",
+                odfNotice: "ODF (.odt, .ods, .odp) dosyaları tarayıcıda doğrudan önizlenemez. LibreOffice veya Office ile açmak için indirebilirsiniz.",
+                previewUnsupported: "Bu dosya türü doğrudan önizlenemez."
             },
             en: {
                 settings: "Settings",
@@ -422,7 +429,14 @@
                 sortSizeDesc: "Size (Large > Small)",
                 sortSizeAsc: "Size (Small > Large)",
                 sortType: "Type",
-                open: "Open"
+                open: "Open",
+                dirPlaceholder: "e.g. /home/user/Shared or C:\\Shared",
+                loadError: "Folder could not be loaded.",
+                saveError: "Settings could not be saved.",
+                previewLoading: "Loading...",
+                previewError: "Preview could not be loaded.",
+                odfNotice: "ODF (.odt, .ods, .odp) files cannot be previewed directly in the browser. Download them to open with LibreOffice or Office.",
+                previewUnsupported: "This file type cannot be previewed directly."
             },
             de: {
                 settings: "Einstellungen",
@@ -450,7 +464,14 @@
                 sortSizeDesc: "Größe (Groß > Klein)",
                 sortSizeAsc: "Größe (Klein > Groß)",
                 sortType: "Typ",
-                open: "Öffnen"
+                open: "Öffnen",
+                dirPlaceholder: "z. B. /home/benutzer/Freigabe oder C:\\Freigabe",
+                loadError: "Ordner konnte nicht geladen werden.",
+                saveError: "Einstellungen konnten nicht gespeichert werden.",
+                previewLoading: "Wird geladen...",
+                previewError: "Vorschau konnte nicht geladen werden.",
+                odfNotice: "ODF-Dateien (.odt, .ods, .odp) können nicht direkt im Browser angezeigt werden. Laden Sie sie herunter, um sie mit LibreOffice oder Office zu öffnen.",
+                previewUnsupported: "Dieser Dateityp kann nicht direkt angezeigt werden."
             }
         };
 
@@ -458,6 +479,7 @@
         let currentConfig = { directories: [] };
         let currentDir = '';
         let allFiles = [];
+        let configDirty = false;
 
         function changeLanguage(lang) {
             currentLang = lang;
@@ -471,36 +493,54 @@
             if (searchInput) {
                 searchInput.placeholder = translations[lang].searchPlaceholder;
             }
+            const newDirInput = document.getElementById('newDirInput');
+            if (newDirInput) {
+                newDirInput.placeholder = translations[lang].dirPlaceholder;
+            }
             filterAndRenderFiles();
         }
 
         function formatSize(bytes) {
-            if (bytes === 0) return '-';
+            if (!bytes || bytes < 0) return '0 B';
             const k = 1024;
             const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function formatDate(value) {
+            const d = new Date(value);
+            if (isNaN(d.getTime())) return value || '';
+            const pad = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ` +
+                `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
         }
 
         async function fetchConfig() {
             try {
                 const res = await fetch('/api/config');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
                 if (data && data.directories) {
                     currentConfig = data;
                 } else {
-                    currentConfig.directories = [];
+                    currentConfig = { directories: [] };
                 }
             } catch(e) {
                 console.error("Config fetch error:", e);
-                currentConfig.directories = [];
+                currentConfig = { directories: [] };
             }
         }
 
         function renderBreadcrumb(dir) {
             const bc = document.getElementById('breadcrumb');
-            bc.innerHTML = `<button onclick="loadFiles('')">🏠 <span>${translations[currentLang].root}</span></button>`;
-            
+            bc.innerHTML = '';
+
+            const rootBtn = document.createElement('button');
+            rootBtn.textContent = '🏠 ' + translations[currentLang].root;
+            rootBtn.addEventListener('click', () => loadFiles(''));
+            bc.appendChild(rootBtn);
+
             const btnBack = document.getElementById('btnBack');
             if (btnBack) {
                 btnBack.style.display = dir ? 'inline-block' : 'none';
@@ -508,21 +548,27 @@
 
             if (!dir) return;
 
-            const sep = dir.includes('/') ? '/' : '\\';
-            const parts = dir.split(sep).filter(Boolean);
-            
+            const parts = dir.split('/').filter(Boolean);
             let accumulated = '';
+
             parts.forEach((part, index) => {
-                if (index === 0 && dir.startsWith('\\\\')) {
-                    accumulated = '\\\\' + part;
+                if (index === 0 && dir.startsWith('//')) {
+                    accumulated = '//' + part;
                 } else if (index === 0 && /^[A-Za-z]:$/.test(part)) {
-                    accumulated = part + sep;
+                    accumulated = part + '/';
+                } else if (index === 0) {
+                    accumulated = '/' + part;
                 } else {
-                    accumulated = accumulated ? accumulated + sep + part : part;
+                    const sep = accumulated.endsWith('/') ? '' : '/';
+                    accumulated = accumulated + sep + part;
                 }
-                
-                const cleanAccumulated = accumulated.replace(/\\/g, '/');
-                bc.innerHTML += ` / <button onclick="loadFiles('${cleanAccumulated}')">${part}</button>`;
+
+                const target = accumulated;
+                bc.appendChild(document.createTextNode(' / '));
+                const btn = document.createElement('button');
+                btn.textContent = part;
+                btn.addEventListener('click', () => loadFiles(target));
+                bc.appendChild(btn);
             });
         }
 
@@ -556,15 +602,20 @@
 
             try {
                 const res = await fetch(`/api/files?dir=${encodeURIComponent(currentDir)}`);
+                if (!res.ok) {
+                    let detail = '';
+                    try { detail = (await res.text()).trim(); } catch(e) {}
+                    throw new Error(detail || ('HTTP ' + res.status));
+                }
                 const files = await res.json();
-                
-                allFiles = files || [];
+
+                allFiles = Array.isArray(files) ? files : [];
                 filterAndRenderFiles();
 
             } catch (err) {
                 console.error("Hata:", err);
                 allFiles = [];
-                filterAndRenderFiles();
+                renderMessage(`${translations[currentLang].loadError} ${err.message || ''}`.trim());
             }
         }
 
@@ -583,7 +634,7 @@
             const sortBy = sortSelect ? sortSelect.value : 'name_asc';
 
             let filtered = allFiles.filter(file => {
-                return file.name.toLowerCase().includes(query);
+                return (file.name || '').toLowerCase().includes(query);
             });
 
             filtered.sort((a, b) => {
@@ -593,9 +644,9 @@
 
                 switch (sortBy) {
                     case 'name_asc':
-                        return a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'});
+                        return (a.name || '').localeCompare(b.name || '', undefined, {numeric: true, sensitivity: 'base'});
                     case 'name_desc':
-                        return b.name.localeCompare(a.name, undefined, {numeric: true, sensitivity: 'base'});
+                        return (b.name || '').localeCompare(a.name || '', undefined, {numeric: true, sensitivity: 'base'});
                     case 'date_desc':
                         return new Date(b.modTime) - new Date(a.modTime);
                     case 'date_asc':
@@ -607,11 +658,36 @@
                     case 'type':
                         return (a.ext || '').localeCompare(b.ext || '');
                     default:
-                        return a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'});
+                        return (a.name || '').localeCompare(b.name || '', undefined, {numeric: true, sensitivity: 'base'});
                 }
             });
 
             renderTable(filtered);
+        }
+
+        function renderMessage(text) {
+            const tbody = document.getElementById('fileTableBody');
+            tbody.innerHTML = '';
+
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = 5;
+            td.style.textAlign = 'center';
+            td.style.color = '#bdbdbd';
+            td.style.padding = '20px';
+            td.textContent = text;
+            tr.appendChild(td);
+            tbody.appendChild(tr);
+        }
+
+        function createDownloadLink(path) {
+            const a = document.createElement('a');
+            a.className = 'btn-action btn-download';
+            a.textContent = translations[currentLang].download;
+            a.href = '/api/download?path=' + encodeURIComponent(path || '');
+            a.target = '_blank';
+            a.rel = 'noopener';
+            return a;
         }
 
         function renderTable(files) {
@@ -619,68 +695,119 @@
             tbody.innerHTML = '';
 
             if (!files || files.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #bdbdbd; padding: 20px;">${translations[currentLang].emptyFolder}</td></tr>`;
+                renderMessage(translations[currentLang].emptyFolder);
                 return;
             }
 
             files.forEach(file => {
                 const tr = document.createElement('tr');
-                
-                let icon = file.isDir ? '📁' : '📄';
                 const ext = (file.ext || '').toLowerCase();
-                const safePath = (file.path || '').replace(/\\/g, '/');
+                const normalizedPath = (file.path || '').replace(/\\/g, '/');
+                const isDir = !!file.isDir;
+                const fileName = file.name || '';
 
-                let actionHtml = '';
-                if (file.isDir) {
-                    actionHtml = `<button class="btn-action" onclick="loadFiles('${safePath}')">${translations[currentLang].open}</button>`;
+                const nameTd = document.createElement('td');
+                const nameLink = document.createElement('a');
+                nameLink.className = 'file-link';
+                nameLink.textContent = (isDir ? '📁' : '📄') + ' ' + fileName;
+                nameLink.addEventListener('click', () => {
+                    if (isDir) {
+                        loadFiles(normalizedPath);
+                    } else {
+                        openPreview(file.path, fileName);
+                    }
+                });
+                nameTd.appendChild(nameLink);
+                tr.appendChild(nameTd);
+
+                const extTd = document.createElement('td');
+                extTd.textContent = file.ext || '';
+                tr.appendChild(extTd);
+
+                const sizeTd = document.createElement('td');
+                sizeTd.textContent = isDir ? '-' : formatSize(file.size);
+                tr.appendChild(sizeTd);
+
+                const dateTd = document.createElement('td');
+                dateTd.textContent = formatDate(file.modTime);
+                tr.appendChild(dateTd);
+
+                const actionsTd = document.createElement('td');
+                const actions = document.createElement('div');
+                actions.className = 'action-btns';
+
+                if (isDir) {
+                    const openBtn = document.createElement('button');
+                    openBtn.className = 'btn-action';
+                    openBtn.textContent = translations[currentLang].open;
+                    openBtn.addEventListener('click', () => loadFiles(normalizedPath));
+                    actions.appendChild(openBtn);
                 } else {
                     const canPreview = ['png', 'jpg', 'jpeg', 'gif', 'txt', 'md', 'log', 'json', 'xml', 'html', 'htm', 'pdf', 'css', 'js'].includes(ext);
                     if (canPreview) {
-                        actionHtml += `<button class="btn-action" onclick="openPreview('${safePath}', '${file.name}')">${translations[currentLang].preview}</button> `;
+                        const previewBtn = document.createElement('button');
+                        previewBtn.className = 'btn-action';
+                        previewBtn.textContent = translations[currentLang].preview;
+                        previewBtn.addEventListener('click', () => openPreview(file.path, fileName));
+                        actions.appendChild(previewBtn);
                     }
-                    actionHtml += `<a class="btn-action btn-download" href="/api/download?path=${encodeURIComponent(file.path)}" target="_blank">${translations[currentLang].download}</a>`;
+                    actions.appendChild(createDownloadLink(file.path));
                 }
 
-                tr.innerHTML = `
-                    <td>
-                        <a class="file-link" onclick="${file.isDir ? `loadFiles('${safePath}')` : `openPreview('${safePath}', '${file.name}')`}">
-                            ${icon} ${file.name}
-                        </a>
-                    </td>
-                    <td>${file.ext}</td>
-                    <td>${file.size === 0 && file.isDir ? '-' : formatSize(file.size)}</td>
-                    <td>${file.modTime}</td>
-                    <td>${actionHtml}</td>
-                `;
+                actionsTd.appendChild(actions);
+                tr.appendChild(actionsTd);
                 tbody.appendChild(tr);
             });
         }
 
         async function openPreview(path, name) {
+            const t = translations[currentLang];
             const ext = name.split('.').pop().toLowerCase();
             document.getElementById('previewTitle').textContent = name;
             const contentDiv = document.getElementById('previewContent');
-            contentDiv.innerHTML = 'Yükleniyor...';
+            contentDiv.textContent = t.previewLoading;
             document.getElementById('previewModal').style.display = 'flex';
 
             const previewUrl = `/api/preview?path=${encodeURIComponent(path)}`;
 
             if (['png', 'jpg', 'jpeg', 'gif'].includes(ext)) {
-                contentDiv.innerHTML = `<img src="${previewUrl}" alt="${name}">`;
+                contentDiv.textContent = '';
+                const img = document.createElement('img');
+                img.src = previewUrl;
+                img.alt = name;
+                contentDiv.appendChild(img);
             } else if (ext === 'pdf') {
-                contentDiv.innerHTML = `<iframe src="${previewUrl}"></iframe>`;
+                contentDiv.textContent = '';
+                const iframe = document.createElement('iframe');
+                iframe.src = previewUrl;
+                iframe.title = name;
+                contentDiv.appendChild(iframe);
             } else if (['txt', 'md', 'log', 'json', 'xml', 'html', 'htm', 'css', 'js'].includes(ext)) {
                 try {
                     const res = await fetch(previewUrl);
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
                     const text = await res.text();
-                    contentDiv.innerHTML = `<pre>${escapeHtml(text)}</pre>`;
+                    contentDiv.textContent = '';
+                    const pre = document.createElement('pre');
+                    pre.textContent = text;
+                    contentDiv.appendChild(pre);
                 } catch(e) {
-                    contentDiv.innerHTML = 'Önizleme yüklenemedi.';
+                    contentDiv.textContent = t.previewError;
                 }
             } else if (['odt', 'ods', 'odp'].includes(ext)) {
-                contentDiv.innerHTML = `<p style="margin: 10px 0;">ODF (.odt, .ods, .odp) dosyaları tarayıcıda doğrudan önizlenemez. LibreOffice veya Office ile açmak için indirebilirsiniz.</p><a class="btn-action btn-download" href="/api/download?path=${encodeURIComponent(path)}" target="_blank">${translations[currentLang].download}</a>`;
+                contentDiv.textContent = '';
+                const p = document.createElement('p');
+                p.style.margin = '10px 0';
+                p.textContent = t.odfNotice;
+                contentDiv.appendChild(p);
+                contentDiv.appendChild(createDownloadLink(path));
             } else {
-                contentDiv.innerHTML = `<p style="margin: 10px 0;">Bu dosya türü doğrudan önizlenemez.</p><a class="btn-action btn-download" href="/api/download?path=${encodeURIComponent(path)}" target="_blank">${translations[currentLang].download}</a>`;
+                contentDiv.textContent = '';
+                const p = document.createElement('p');
+                p.style.margin = '10px 0';
+                p.textContent = t.previewUnsupported;
+                contentDiv.appendChild(p);
+                contentDiv.appendChild(createDownloadLink(path));
             }
         }
 
@@ -689,19 +816,20 @@
             document.getElementById('previewContent').innerHTML = '';
         }
 
-        function escapeHtml(text) {
-            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        }
-
         async function openSettings() {
-            await fetchConfig();
+            if (!currentConfig.directories) {
+                currentConfig.directories = [];
+            }
             renderDirList();
             document.getElementById('settingsModal').style.display = 'flex';
         }
 
         function closeSettings() {
             document.getElementById('settingsModal').style.display = 'none';
-            loadFiles(currentDir);
+            if (configDirty) {
+                configDirty = false;
+                loadFiles(currentDir);
+            }
         }
 
         function renderDirList() {
@@ -713,7 +841,16 @@
             currentConfig.directories.forEach((dir, index) => {
                 const li = document.createElement('li');
                 li.className = 'dir-item';
-                li.innerHTML = `<span>${dir}</span> <button onclick="removeDirectory(${index})">${translations[currentLang].delete}</button>`;
+
+                const span = document.createElement('span');
+                span.textContent = dir;
+
+                const btn = document.createElement('button');
+                btn.textContent = translations[currentLang].delete;
+                btn.addEventListener('click', () => removeDirectory(index));
+
+                li.appendChild(span);
+                li.appendChild(btn);
                 list.appendChild(li);
             });
         }
@@ -729,24 +866,63 @@
             currentConfig.directories.push(val);
             input.value = '';
 
-            await saveConfigToServer();
+            const ok = await saveConfigToServer();
+            if (!ok) {
+                currentConfig.directories.pop();
+            }
             renderDirList();
         }
 
         async function removeDirectory(index) {
-            currentConfig.directories.splice(index, 1);
-            await saveConfigToServer();
+            const removed = currentConfig.directories.splice(index, 1)[0];
+            const ok = await saveConfigToServer();
+            if (!ok) {
+                currentConfig.directories.splice(index, 0, removed);
+            }
             renderDirList();
         }
 
         async function saveConfigToServer() {
-            await fetch('/api/config', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(currentConfig)
-            });
+            try {
+                const res = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentConfig)
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                currentConfig = await res.json();
+                configDirty = true;
+                return true;
+            } catch (err) {
+                console.error('Config save error:', err);
+                alert(translations[currentLang].saveError);
+                return false;
+            }
         }
 
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (event) => {
+                if (event.target !== modal) return;
+                if (modal.id === 'settingsModal') {
+                    closeSettings();
+                } else if (modal.id === 'previewModal') {
+                    closePreview();
+                }
+            });
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape') return;
+            const previewModal = document.getElementById('previewModal');
+            const settingsModal = document.getElementById('settingsModal');
+            if (previewModal.style.display === 'flex') {
+                closePreview();
+            } else if (settingsModal.style.display === 'flex') {
+                closeSettings();
+            }
+        });
+
+        changeLanguage(currentLang);
         loadFiles('');
     </script>
 </body>
