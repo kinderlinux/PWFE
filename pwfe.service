@@ -7,6 +7,8 @@ Type=simple
 User=root
 WorkingDirectory=/opt/pwfe
 ExecStart=/opt/pwfe/pwfe
+Environment=PWFE_ROOT=/opt/pwfe
+Environment=PWFE_CONFIG=/etc/pwfe/config.json
 Restart=always
 RestartSec=3
 

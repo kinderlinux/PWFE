@@ -1,0 +1,11 @@
+[Unit]
+Description=PWFE Guncelleyici
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/pwfe
+ExecStart=/opt/pwfe/pwfe-update --apply
+Environment=PWFE_ROOT=/opt/pwfe

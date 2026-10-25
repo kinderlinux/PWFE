@@ -21,9 +21,48 @@
             color: #f5f5f5;
             padding: 10px 20px;
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
             align-items: center;
             gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .header-left,
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .version-label {
+            font-size: 13px;
+            color: #bdbdbd;
+        }
+
+        .update-status {
+            font-size: 13px;
+            color: #bdbdbd;
+            margin: 8px 0;
+            line-height: 1.4;
+        }
+
+        .update-password {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #252525;
+            color: #f5f5f5;
+            font-size: 14px;
+        }
+
+        .update-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 12px;
         }
 
         select, button {
@@ -289,12 +328,18 @@
 <body>
 
     <header>
-        <select id="langSelect" onchange="changeLanguage(this.value)">
-            <option value="tr">Türkçe</option>
-            <option value="en">English</option>
-            <option value="de">Deutsch</option>
-        </select>
-        <button class="btn-primary" onclick="openSettings()" data-i18n="settings">Ayarlar</button>
+        <div class="header-left">
+            <button class="btn-primary" onclick="openUpdateModal()" data-i18n="updateBtn">⬆ Güncelle</button>
+            <span id="versionLabel" class="version-label"></span>
+        </div>
+        <div class="header-right">
+            <select id="langSelect" onchange="changeLanguage(this.value)">
+                <option value="tr">Türkçe</option>
+                <option value="en">English</option>
+                <option value="de">Deutsch</option>
+            </select>
+            <button class="btn-primary" onclick="openSettings()" data-i18n="settings">Ayarlar</button>
+        </div>
     </header>
 
     <main>
@@ -337,6 +382,26 @@
     <footer>
         Panda Web File Explorer • <span data-i18n="footer">KinderLinux tarafından</span>
     </footer>
+
+    <!-- Update Modal -->
+    <div class="modal" id="updateModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 data-i18n="updateTitle">Güncelleme</h3>
+                <button class="close-btn" onclick="closeUpdateModal()">&times;</button>
+            </div>
+            <p id="updateInfo" class="update-status" data-i18n="updateChecking">Sürüm kontrol ediliyor...</p>
+            <div id="updatePasswordBox" style="display: none;">
+                <label for="updatePassword" data-i18n="updatePasswordLabel" style="font-size: 13px; color: #bdbdbd;">Güncelleme şifresi</label>
+                <input type="password" id="updatePassword" class="update-password" autocomplete="current-password" style="margin-top: 6px;">
+            </div>
+            <p id="updateMessage" class="update-status"></p>
+            <div class="update-actions">
+                <button class="btn-action" onclick="refreshUpdateInfo()" data-i18n="updateCheck">Kontrol Et</button>
+                <button class="btn-primary" id="updateApplyBtn" onclick="applyUpdate()" data-i18n="updateStart" style="display: none;">Güncelle</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Settings Modal -->
     <div class="modal" id="settingsModal">
@@ -401,7 +466,26 @@
                 previewLoading: "Yükleniyor...",
                 previewError: "Önizleme yüklenemedi.",
                 odfNotice: "ODF (.odt, .ods, .odp) dosyaları tarayıcıda doğrudan önizlenemez. LibreOffice veya Office ile açmak için indirebilirsiniz.",
-                previewUnsupported: "Bu dosya türü doğrudan önizlenemez."
+                previewUnsupported: "Bu dosya türü doğrudan önizlenemez.",
+                updateBtn: "⬆ Güncelle",
+                updateTitle: "Güncelleme",
+                updateChecking: "Sürüm kontrol ediliyor...",
+                updateCurrent: "Mevcut sürüm",
+                updateLatest: "Son sürüm",
+                updateAvailable: "Yeni sürüm mevcut.",
+                updateUpToDate: "Sistem güncel.",
+                updatePasswordLabel: "Güncelleme şifresi",
+                updateCheck: "Kontrol Et",
+                updateStart: "Güncelle",
+                updateRunning: "Güncelleme çalışıyor...",
+                updateSuccess: "Güncelleme tamamlandı. Sayfa yenileniyor...",
+                updateTimeout: "Güncelleme zaman aşımına uğradı. Günlük: /opt/pwfe/update.log",
+                updateWrongPassword: "Güncelleme şifresi yanlış.",
+                updateRateLimited: "Çok fazla hatalı deneme. 5 dakika sonra tekrar deneyin.",
+                updateNotConfigured: "Güncelleme şifresi belirlenmemiş. Sunucuda 'sudo pwfe --set-update-password' çalıştırın.",
+                updateEmptyPassword: "Lütfen güncelleme şifresini girin.",
+                updateError: "Güncelleme başlatılamadı.",
+                updateCheckFailed: "Sürüm kontrol edilemedi."
             },
             en: {
                 settings: "Settings",
@@ -436,7 +520,26 @@
                 previewLoading: "Loading...",
                 previewError: "Preview could not be loaded.",
                 odfNotice: "ODF (.odt, .ods, .odp) files cannot be previewed directly in the browser. Download them to open with LibreOffice or Office.",
-                previewUnsupported: "This file type cannot be previewed directly."
+                previewUnsupported: "This file type cannot be previewed directly.",
+                updateBtn: "⬆ Update",
+                updateTitle: "Update",
+                updateChecking: "Checking version...",
+                updateCurrent: "Current version",
+                updateLatest: "Latest version",
+                updateAvailable: "A new version is available.",
+                updateUpToDate: "System is up to date.",
+                updatePasswordLabel: "Update password",
+                updateCheck: "Check",
+                updateStart: "Update",
+                updateRunning: "Update in progress...",
+                updateSuccess: "Update completed. Reloading...",
+                updateTimeout: "Update timed out. Log: /opt/pwfe/update.log",
+                updateWrongPassword: "Update password is incorrect.",
+                updateRateLimited: "Too many failed attempts. Try again in 5 minutes.",
+                updateNotConfigured: "Update password is not configured. Run 'sudo pwfe --set-update-password' on the server.",
+                updateEmptyPassword: "Please enter the update password.",
+                updateError: "Update could not be started.",
+                updateCheckFailed: "Version check failed."
             },
             de: {
                 settings: "Einstellungen",
@@ -471,7 +574,26 @@
                 previewLoading: "Wird geladen...",
                 previewError: "Vorschau konnte nicht geladen werden.",
                 odfNotice: "ODF-Dateien (.odt, .ods, .odp) können nicht direkt im Browser angezeigt werden. Laden Sie sie herunter, um sie mit LibreOffice oder Office zu öffnen.",
-                previewUnsupported: "Dieser Dateityp kann nicht direkt angezeigt werden."
+                previewUnsupported: "Dieser Dateityp kann nicht direkt angezeigt werden.",
+                updateBtn: "⬆ Aktualisieren",
+                updateTitle: "Aktualisierung",
+                updateChecking: "Version wird geprüft...",
+                updateCurrent: "Aktuelle Version",
+                updateLatest: "Neueste Version",
+                updateAvailable: "Eine neue Version ist verfügbar.",
+                updateUpToDate: "Das System ist aktuell.",
+                updatePasswordLabel: "Aktualisierungspasswort",
+                updateCheck: "Prüfen",
+                updateStart: "Aktualisieren",
+                updateRunning: "Aktualisierung läuft...",
+                updateSuccess: "Aktualisierung abgeschlossen. Seite wird neu geladen...",
+                updateTimeout: "Zeitüberschreitung bei der Aktualisierung. Protokoll: /opt/pwfe/update.log",
+                updateWrongPassword: "Das Aktualisierungspasswort ist falsch.",
+                updateRateLimited: "Zu viele Fehlversuche. Versuchen Sie es in 5 Minuten erneut.",
+                updateNotConfigured: "Kein Aktualisierungspasswort konfiguriert. Führen Sie 'sudo pwfe --set-update-password' auf dem Server aus.",
+                updateEmptyPassword: "Bitte geben Sie das Aktualisierungspasswort ein.",
+                updateError: "Aktualisierung konnte nicht gestartet werden.",
+                updateCheckFailed: "Versionsprüfung fehlgeschlagen."
             }
         };
 
@@ -816,6 +938,175 @@
             document.getElementById('previewContent').innerHTML = '';
         }
 
+        let updatePolling = false;
+
+        async function loadVersion() {
+            try {
+                const res = await fetch('/api/version', { cache: 'no-store' });
+                if (!res.ok) return null;
+                const data = await res.json();
+                const label = document.getElementById('versionLabel');
+                if (label) label.textContent = 'v' + data.version;
+                return data.version;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function openUpdateModal() {
+            document.getElementById('updateModal').style.display = 'flex';
+            document.getElementById('updatePassword').value = '';
+            document.getElementById('updateMessage').textContent = '';
+            refreshUpdateInfo();
+        }
+
+        function closeUpdateModal() {
+            document.getElementById('updateModal').style.display = 'none';
+        }
+
+        async function refreshUpdateInfo() {
+            const t = translations[currentLang];
+            const info = document.getElementById('updateInfo');
+            const message = document.getElementById('updateMessage');
+            const passwordBox = document.getElementById('updatePasswordBox');
+            const applyBtn = document.getElementById('updateApplyBtn');
+
+            info.textContent = t.updateChecking;
+            message.textContent = '';
+            passwordBox.style.display = 'none';
+            applyBtn.style.display = 'none';
+            applyBtn.disabled = false;
+            await loadVersion();
+
+            try {
+                const res = await fetch('/api/update/check', { cache: 'no-store' });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+
+                info.textContent = `${t.updateCurrent}: v${data.current} • ${t.updateLatest}: v${data.latest}`;
+                if (data.available) {
+                    message.textContent = t.updateAvailable;
+                    passwordBox.style.display = 'block';
+                    applyBtn.style.display = 'inline-block';
+                } else {
+                    message.textContent = t.updateUpToDate;
+                }
+            } catch (e) {
+                info.textContent = t.updateCheckFailed;
+                message.textContent = e.message || '';
+            }
+        }
+
+        async function applyUpdate() {
+            const t = translations[currentLang];
+            const passwordInput = document.getElementById('updatePassword');
+            const message = document.getElementById('updateMessage');
+            const applyBtn = document.getElementById('updateApplyBtn');
+            const password = passwordInput.value;
+
+            if (!password) {
+                message.textContent = t.updateEmptyPassword;
+                passwordInput.focus();
+                return;
+            }
+
+            const currentLabel = document.getElementById('versionLabel').textContent || '';
+            const oldVersion = parseInt(currentLabel.replace(/^v/, ''), 10) || 0;
+
+            applyBtn.disabled = true;
+            message.textContent = t.updateRunning;
+
+            try {
+                const res = await fetch('/api/update/apply', {
+                    method: 'POST',
+                    headers: { 'X-PWFE-Update-Password': password }
+                });
+                const data = await res.json().catch(() => ({}));
+
+                if (res.status === 202) {
+                    passwordInput.value = '';
+                    pollUpdate(oldVersion);
+                    return;
+                }
+
+                applyBtn.disabled = false;
+                if (res.status === 403 || data.code === 'wrong_password') {
+                    message.textContent = t.updateWrongPassword;
+                } else if (res.status === 429 || data.code === 'rate_limited') {
+                    message.textContent = t.updateRateLimited;
+                } else if (res.status === 503 || data.code === 'not_configured') {
+                    message.textContent = t.updateNotConfigured;
+                } else if (res.status === 409 || data.code === 'no_update') {
+                    message.textContent = t.updateUpToDate;
+                } else {
+                    message.textContent = (data.error || t.updateError);
+                }
+            } catch (e) {
+                applyBtn.disabled = false;
+                message.textContent = t.updateError + ' ' + (e.message || '');
+            }
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function pollUpdate(oldVersion) {
+            if (updatePolling) return;
+            updatePolling = true;
+
+            const t = translations[currentLang];
+            const message = document.getElementById('updateMessage');
+            const applyBtn = document.getElementById('updateApplyBtn');
+            const deadline = Date.now() + 180000;
+
+            try {
+                while (Date.now() < deadline) {
+                    await sleep(2000);
+
+                    let status = null;
+                    try {
+                        const res = await fetch('/api/update/status', { cache: 'no-store' });
+                        if (res.ok) status = await res.json();
+                    } catch (e) {
+                        // Servis yeniden başlarken bağlantı kopabilir.
+                    }
+
+                    try {
+                        const res = await fetch('/api/version', { cache: 'no-store' });
+                        if (res.ok) {
+                            const data = await res.json();
+                            const label = document.getElementById('versionLabel');
+                            if (label) label.textContent = 'v' + data.version;
+                            const newVersion = parseInt(data.version, 10) || 0;
+                            if (newVersion > oldVersion) {
+                                message.textContent = t.updateSuccess;
+                                setTimeout(() => location.reload(), 1500);
+                                return;
+                            }
+                        }
+                    } catch (e) {
+                        // Güncelleme sırasında servis kapalı olabilir.
+                    }
+
+                    if (status && status.stage === 'error') {
+                        message.textContent = t.updateError + ' ' + (status.error || '');
+                        applyBtn.disabled = false;
+                        return;
+                    }
+
+                    if (status && status.stage && status.stage !== 'idle') {
+                        message.textContent = t.updateRunning + ' (' + status.stage + ')';
+                    }
+                }
+
+                message.textContent = t.updateTimeout;
+                applyBtn.disabled = false;
+            } finally {
+                updatePolling = false;
+            }
+        }
+
         async function openSettings() {
             if (!currentConfig.directories) {
                 currentConfig.directories = [];
@@ -907,6 +1198,8 @@
                     closeSettings();
                 } else if (modal.id === 'previewModal') {
                     closePreview();
+                } else if (modal.id === 'updateModal') {
+                    closeUpdateModal();
                 }
             });
         });
@@ -915,7 +1208,10 @@
             if (event.key !== 'Escape') return;
             const previewModal = document.getElementById('previewModal');
             const settingsModal = document.getElementById('settingsModal');
-            if (previewModal.style.display === 'flex') {
+            const updateModal = document.getElementById('updateModal');
+            if (updateModal.style.display === 'flex') {
+                closeUpdateModal();
+            } else if (previewModal.style.display === 'flex') {
                 closePreview();
             } else if (settingsModal.style.display === 'flex') {
                 closeSettings();
@@ -923,6 +1219,7 @@
         });
 
         changeLanguage(currentLang);
+        loadVersion();
         loadFiles('');
     </script>
 </body>
