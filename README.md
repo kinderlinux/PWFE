@@ -70,7 +70,7 @@ sudo /opt/pwfe/pwfe --set-update-password 'yeni-sifre'
 ## Kaldırma
 
 ```bash
-sudo bash install.sh --uninstall
+curl -fsSL https://raw.githubusercontent.com/kinderlinux/PWFE/main/install.sh | sudo bash --uninstall
 ```
 
 Bu komut servisi durdurur, systemd birimlerini, `/opt/pwfe` ve `/etc/pwfe` dizinlerini (config ve güncelleme şifresi dahil) siler.
