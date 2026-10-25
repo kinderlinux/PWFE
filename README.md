@@ -70,6 +70,7 @@ sudo /opt/pwfe/pwfe --set-update-password 'yeni-sifre'
 ## Kaldırma
 
 ```bash
+cd
 curl -O https://raw.githubusercontent.com/kinderlinux/PWFE/main/install.sh
 chmod +x ./install.sh
 sudo bash ./install.sh --uninstall
