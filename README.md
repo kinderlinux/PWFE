@@ -15,10 +15,10 @@ Yerel ağınızda çalışan, hafif bir web dosya gezginidir. Go ile yazılmış
 
 ## Kurulum (Arch Linux)
 
+Tek satır kurulum (betiği önce indirip incelemek istemiyorsanız):
+
 ```bash
-git clone https://github.com/kinderlinux/PWFE.git
-cd PWFE
-sudo bash install.sh
+curl -fsSL https://raw.githubusercontent.com/kinderlinux/PWFE/main/install.sh | sudo bash
 ```
 
 Betik sırasıyla:
@@ -28,6 +28,8 @@ Betik sırasıyla:
 3. `pwfe` ve `pwfe-update` programlarını derleyip `/opt/pwfe` altına kurar.
 4. Servisi kurar ve açılışta otomatik başlayacak şekilde etkinleştirir.
 
+> Güncelleme şifresi ilk kurulumda sorulur ve sonraki kurulumlarda korunur. Yalnızca güncelleme başlatmak için kullanılır; dosya erişiminde şifre yoktur.
+
 Kurulumdan sonra tarayıcıdan sunucu adresini açın:
 
 ```text
@@ -35,14 +37,6 @@ http://<SUNUCU_IP>:7933
 ```
 
 **Ayarlar** butonundan paylaşmak istediğiniz klasörleri ekleyin.
-
-> Güncelleme şifresi ilk kurulumda sorulur ve sonraki kurulumlarda korunur. Yalnızca güncelleme başlatmak için kullanılır; dosya erişiminde şifre yoktur.
-
-Tek satır kurulum (betiği önce indirip incelemek istemiyorsanız):
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/kinderlinux/PWFE/main/install.sh | sudo bash
-```
 
 ---
 
