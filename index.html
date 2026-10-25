@@ -6,7 +6,16 @@
   <meta name="theme-color" content="#efeae0">
   <meta name="description" content="Panda Web File Explorer — Yerel ağında çalışan, hafif ve kendi kendine yeten bir dosya gezgini.">
   <title>Panda Web File Explorer — KinderLinux</title>
-  <script>document.documentElement.classList.add("js");</script>
+  <script>
+    document.documentElement.classList.add("js");
+    try {
+      var savedTheme = localStorage.getItem("pwfe-theme");
+      var initialTheme = savedTheme || "dark";
+      document.documentElement.dataset.theme = initialTheme;
+    } catch (error) {
+      document.documentElement.dataset.theme = "light";
+    }
+  </script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,6 +36,10 @@
       --acid: #d7f26b;
       --acid-soft: #e9f9ac;
       --clay: #b64a2c;
+      --moss-solid: #1e4a2e;
+      --invert-bg: #171a14;
+      --invert-fg: #efeae0;
+      --on-acid: #171a14;
       --terminal: #10130e;
       --terminal-fg: #dfe9d6;
       --terminal-dim: #7e8b78;
@@ -73,7 +86,7 @@
 
     ::selection {
       background: var(--acid);
-      color: var(--ink);
+      color: var(--on-acid);
     }
 
     a { color: inherit; }
@@ -96,8 +109,8 @@
       top: -100px;
       z-index: 300;
       padding: 10px 16px;
-      background: var(--ink);
-      color: var(--paper);
+      background: var(--invert-bg);
+      color: var(--invert-fg);
       font-family: var(--mono);
       font-size: 12px;
       text-decoration: none;
@@ -151,8 +164,8 @@
     }
 
     .topline {
-      background: var(--ink);
-      color: var(--paper);
+      background: var(--invert-bg);
+      color: var(--invert-fg);
       font-family: var(--mono);
       font-size: 10px;
       letter-spacing: .14em;
@@ -313,13 +326,33 @@
 
     .lang-select:hover { background: var(--acid-soft); }
 
+    .theme-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      flex: 0 0 auto;
+      padding: 0;
+      border: 1px solid var(--line-strong);
+      background: transparent;
+      cursor: pointer;
+      transition: background .2s var(--ease), color .2s var(--ease);
+    }
+
+    .theme-toggle:hover { background: var(--acid-soft); }
+    .theme-toggle svg { width: 15px; height: 15px; }
+    .theme-toggle .icon-sun { display: none; }
+    html[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+    html[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+
     .star-link {
       display: inline-flex;
       align-items: center;
       gap: 8px;
       padding: 10px 14px;
-      background: var(--ink);
-      color: var(--paper);
+      background: var(--invert-bg);
+      color: var(--invert-fg);
       border: 1px solid var(--ink);
       font-family: var(--mono);
       font-size: 10px;
@@ -332,7 +365,7 @@
     }
 
     .star-link:hover {
-      background: var(--moss);
+      background: var(--moss-solid);
       transform: translateY(-1px);
     }
 
@@ -443,8 +476,8 @@
       min-height: 50px;
       padding: 13px 19px;
       border: 1px solid var(--ink);
-      background: var(--ink);
-      color: var(--paper);
+      background: var(--invert-bg);
+      color: var(--invert-fg);
       font-family: var(--mono);
       font-size: 11px;
       font-weight: 500;
@@ -458,7 +491,7 @@
     .button:hover {
       transform: translate(-2px, -2px);
       box-shadow: 7px 7px 0 var(--acid);
-      background: var(--moss);
+      background: var(--moss-solid);
     }
 
     .button:active {
@@ -594,8 +627,8 @@
     }
 
     .explorer__tab--active {
-      background: var(--moss);
-      color: var(--paper);
+      background: var(--moss-solid);
+      color: var(--invert-fg);
       padding-top: 8px;
       padding-bottom: 6px;
     }
@@ -902,10 +935,10 @@
       position: relative;
       z-index: 2;
       overflow: hidden;
-      background: var(--ink);
+      background: var(--invert-bg);
       color: var(--acid);
-      border-top: 1px solid var(--ink);
-      border-bottom: 1px solid var(--ink);
+      border-top: 1px solid var(--invert-bg);
+      border-bottom: 1px solid var(--invert-bg);
       transform: rotate(-.6deg) scale(1.02);
       margin: 10px 0 0;
     }
@@ -1172,9 +1205,9 @@
     }
 
     .card--dark {
-      background: var(--ink);
-      border-color: var(--ink);
-      color: var(--paper);
+      background: var(--invert-bg);
+      border-color: var(--invert-bg);
+      color: var(--invert-fg);
     }
 
     .card--dark:hover { border-color: var(--acid); box-shadow: 6px 6px 0 rgba(215, 242, 107, .22); }
@@ -1184,7 +1217,7 @@
     }
 
     .card--dark .card__num { color: #89917f; }
-    .card--dark h3 { color: var(--paper); }
+    .card--dark h3 { color: var(--invert-fg); }
     .card--dark p { color: #aab1a1; }
     .card--dark .card__icon { color: var(--acid); }
 
@@ -1220,7 +1253,7 @@
       font-size: 7px;
     }
 
-    .pipe-step.is-done i { background: var(--moss-light); border-color: var(--moss-light); color: var(--paper); }
+    .pipe-step.is-done i { background: var(--moss-light); border-color: var(--moss-light); color: var(--invert-fg); }
     .pipe-step.is-active { color: var(--acid); }
     .pipe-step.is-active i {
       border-color: var(--acid);
@@ -1257,8 +1290,8 @@
     }
 
     .lang-chip--active {
-      background: var(--moss);
-      color: var(--paper);
+      background: var(--moss-solid);
+      color: var(--invert-fg);
       border-color: var(--moss);
     }
 
@@ -1301,11 +1334,11 @@
     .specs {
       position: relative;
       overflow: hidden;
-      background: var(--ink);
-      color: var(--paper);
+      background: var(--invert-bg);
+      color: var(--invert-fg);
       padding: 82px 0;
-      border-top: 1px solid var(--ink);
-      border-bottom: 1px solid var(--ink);
+      border-top: 1px solid var(--invert-bg);
+      border-bottom: 1px solid var(--invert-bg);
     }
 
     .specs::before {
@@ -1332,7 +1365,7 @@
     }
 
     .specs .eyebrow { color: var(--acid); }
-    .specs .eyebrow::before { border-color: var(--paper); }
+    .specs .eyebrow::before { border-color: var(--invert-fg); }
 
     .specs h2 {
       margin: 16px 0 20px;
@@ -1368,7 +1401,7 @@
     }
 
     .spec-stat {
-      background: var(--ink);
+      background: var(--invert-bg);
       padding: 16px 13px 14px;
     }
 
@@ -1418,7 +1451,7 @@
       margin: 0;
       font-family: var(--mono);
       font-size: 11px;
-      color: var(--paper);
+      color: var(--invert-fg);
       text-align: right;
     }
 
@@ -1609,7 +1642,8 @@
       position: relative;
       overflow: hidden;
       background: var(--acid);
-      border-top: 1px solid var(--ink);
+      color: var(--on-acid);
+      border-top: 1px solid var(--on-acid);
       padding: 78px 0 84px;
     }
 
@@ -1635,8 +1669,8 @@
       max-width: 760px;
     }
 
-    .final .eyebrow { color: var(--ink); }
-    .final .eyebrow::before { background: var(--paper); }
+    .final .eyebrow { color: var(--on-acid); }
+    .final .eyebrow::before { background: var(--on-acid); }
 
     .final h2 {
       margin: 16px 0 18px;
@@ -1670,35 +1704,21 @@
     }
 
     .final .button {
-      background: var(--ink);
-      color: var(--paper);
-      box-shadow: 4px 4px 0 var(--paper-raised);
+      background: var(--invert-bg);
+      color: var(--invert-fg);
+      box-shadow: 4px 4px 0 var(--invert-bg);
     }
 
     .final .button:hover {
-      background: var(--moss);
-      box-shadow: 7px 7px 0 var(--paper-raised);
+      background: var(--moss-solid);
+      box-shadow: 7px 7px 0 var(--invert-bg);
     }
 
     .final .button .arrow { color: var(--acid); }
 
-    .address-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 11px 14px;
-      border: 1px solid var(--ink);
-      background: rgba(248, 245, 237, .4);
-      font-family: var(--mono);
-      font-size: 10px;
-      letter-spacing: .02em;
-    }
-
-    .address-chip .status-dot { background: var(--ink); animation: none; }
-
     .site-footer {
-      background: var(--ink);
-      color: var(--paper);
+      background: var(--invert-bg);
+      color: var(--invert-fg);
       padding: 34px 0 28px;
     }
 
@@ -1797,6 +1817,57 @@
       background: var(--acid);
       border-radius: 50%;
     }
+
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --paper: #14170f;
+      --paper-raised: #1b1f17;
+      --paper-sunken: #10130c;
+      --ink: #ede8dd;
+      --ink-soft: #b0b7a8;
+      --ink-faint: #89927e;
+      --line: #3a4034;
+      --line-strong: #a9b09f;
+      --moss: #9fd0a9;
+      --moss-light: #b9e3b5;
+      --moss-solid: #2e6b43;
+      --acid-soft: #26301c;
+      --clay: #e0785a;
+      --invert-bg: #090b07;
+      --invert-fg: #f2eee4;
+    }
+
+    html[data-theme="dark"] body::after {
+      mix-blend-mode: screen;
+      opacity: .028;
+    }
+
+    html[data-theme="dark"] .site-header {
+      background: rgba(20, 23, 15, .92);
+    }
+
+    html[data-theme="dark"] .explorer__side { background: #181c14; }
+    html[data-theme="dark"] .explorer__bar,
+    html[data-theme="dark"] .explorer__foot { background: #191d15; }
+    html[data-theme="dark"] .explorer__tab { background: #181c14; }
+    html[data-theme="dark"] .explorer__main { background: var(--paper-raised); }
+    html[data-theme="dark"] .file-table td { border-bottom-color: var(--line); }
+    html[data-theme="dark"] .ftype { color: var(--on-acid); }
+    html[data-theme="dark"] .folder-list li.is-active,
+    html[data-theme="dark"] .hero h1 .mark { color: var(--on-acid); }
+    html[data-theme="dark"] .folder-list li.is-active { border-color: var(--on-acid); }
+    html[data-theme="dark"] .mini-check::after { border-color: var(--on-acid); }
+    html[data-theme="dark"] .note {
+      background: #252b1e;
+      color: var(--ink);
+      border-color: var(--ink);
+      box-shadow: 3px 3px 0 var(--acid);
+    }
+    html[data-theme="dark"] .note span { color: var(--ink-soft); }
+    html[data-theme="dark"] .note::before { background: rgba(215, 242, 107, .35); }
+    html[data-theme="dark"] .version-stamp { color: var(--ink); }
+    html[data-theme="dark"] .hero::before,
+    html[data-theme="dark"] .hero::after { opacity: .3; }
 
     .js [data-reveal] {
       opacity: 0;
@@ -1901,7 +1972,7 @@
   <div class="topline">
     <div class="topline__inner">
       <span data-i18n="toplineLeft">Yerel ağ için dosya gezgini</span>
-      <span data-i18n="toplineRight">Sürüm 2 · GPL-3.0 · kinderlinux</span>
+      <span data-i18n="toplineRight">AGPL-3.0 · kinderlinux</span>
     </div>
   </div>
   <header class="site-header" id="top">
@@ -1918,7 +1989,7 @@
           <span class="brand__name">PWFE</span>
           <span class="brand__sub">Panda Web File Explorer</span>
         </span>
-        <span class="version-stamp">v2 · local</span>
+        <span class="version-stamp">v<span data-version>…</span></span>
       </a>
 
       <nav class="site-nav" aria-label="Ana menü" data-i18n-aria="navLabel">
@@ -1928,6 +1999,16 @@
       </nav>
 
       <div class="header-tools">
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Karanlık temaya geç">
+          <svg class="icon-moon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M13.4 9.6A5.9 5.9 0 0 1 6.4 2.6a5.9 5.9 0 1 0 7 7Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+          </svg>
+          <svg class="icon-sun" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.2"/>
+            <path d="M8 1.2v1.6M8 13.2v1.6M1.2 8h1.6M13.2 8h1.6M3.2 3.2l1.1 1.1M11.7 11.7l1.1 1.1M12.8 3.2l-1.1 1.1M4.3 11.7l-1.1 1.1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+        </button>
+
         <label class="lang-wrap">
           <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <circle cx="8" cy="8" r="6.4" stroke="currentColor" stroke-width="1.1"/>
@@ -1981,7 +2062,7 @@
             </div>
 
             <ul class="hero__meta">
-              <li><b data-i18n="meta1">Tek binary</b></li>
+              <li><b data-i18n="meta1">İki binary</b></li>
               <li><b data-i18n="meta2">Sıfır bağımlılık</b></li>
               <li><b data-i18n="meta3">Port 7933</b></li>
             </ul>
@@ -2000,7 +2081,7 @@
                   <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
                     <path d="M2 5h5l2 2h5v6H2z" stroke="currentColor" stroke-width="1.3"/>
                   </svg>
-                  192.168.1.14:7933
+                  localhost:7933
                 </span>
               </div>
 
@@ -2113,8 +2194,8 @@
             </div>
 
             <div class="note" aria-hidden="true">
-              <b data-i18n="noteTitle">Tek binary.</b>
-              <span data-i18n="noteText">Kendi ağında, kendi portunda. Bulut yok.</span>
+              <b data-i18n="noteTitle">İki binary.</b>
+              <span data-i18n="noteText">pwfe + pwfe-update. Kendi ağında, kendi portunda.</span>
             </div>
           </div>
         </div>
@@ -2177,7 +2258,7 @@
                   <span data-i18n="f1Stat1">harici bağımlılık</span>
                 </div>
                 <div class="card-stat">
-                  <strong>1</strong>
+                  <strong>2</strong>
                   <span data-i18n="f1Stat2">çalıştırılabilir dosya</span>
                 </div>
               </div>
@@ -2370,6 +2451,10 @@
               <dd data-i18n="specUiValue">Tek HTML dosyası</dd>
             </div>
             <div class="spec-row">
+              <dt data-i18n="specBinaries">Binary'ler</dt>
+              <dd>pwfe + pwfe-update</dd>
+            </div>
+            <div class="spec-row">
               <dt data-i18n="specService">Servis</dt>
               <dd>systemd <span class="tag">root</span></dd>
             </div>
@@ -2383,15 +2468,15 @@
             </div>
             <div class="spec-row">
               <dt data-i18n="specPlatform">Platform</dt>
-              <dd>Linux <span class="tag">systemd</span> · Windows</dd>
+              <dd>Linux <span class="tag">systemd</span></dd>
             </div>
             <div class="spec-row">
               <dt data-i18n="specLicense">Lisans</dt>
-              <dd>GPL-3.0</dd>
+              <dd>AGPL-3.0</dd>
             </div>
             <div class="spec-row">
               <dt data-i18n="specNetwork">Ağ</dt>
-              <dd data-i18n="specNetworkValue">Yerel · 0.0.0.0:7933</dd>
+              <dd data-i18n="specNetworkValue">Yerel ağ · 7933</dd>
             </div>
           </dl>
         </div>
@@ -2404,34 +2489,34 @@
           <div data-reveal>
             <p class="eyebrow" data-i18n="installEyebrow">Kurulum</p>
             <h2>
-              <span data-i18n="installTitleA">İki komut.</span>
+              <span data-i18n="installTitleA">Tek komut.</span>
               <em data-i18n="installTitleB">Sonra tarayıcı.</em>
             </h2>
             <p class="install__intro" data-i18n="installText">
-              Arch Linux için hazırlanmış kurulum betiği bağımlılıkları kontrol eder,
-              servisleri kurar ve arayüzü açar. Kaynağı kendin derlemek istersen README yanında.
+              Arch Linux için resmî kurulum betiği bağımlılıkları kontrol eder, iki binary'yi derler,
+              systemd servislerini kurar ve arayüzü açar. Depoyu klonlamak gerekmez.
             </p>
 
             <ol class="steps">
               <li class="step">
                 <span class="step__num">01</span>
                 <div>
-                  <h3 data-i18n="step1Title">Depoyu çek</h3>
-                  <p data-i18n="step1Text">Kaynak kodu klonla. Tek ihtiyacın git.</p>
+                  <h3 data-i18n="step1Title">Betiği çalıştır</h3>
+                  <p data-i18n="step1Text">Tek satırlık kurulum betiğini çalıştır. Bağımlılıkları ve servisleri kendisi kurar.</p>
                 </div>
               </li>
               <li class="step">
                 <span class="step__num">02</span>
                 <div>
-                  <h3 data-i18n="step2Title">Kur</h3>
-                  <p data-i18n="step2Text">install.sh bağımlılıkları kurar, binary'leri derler, systemd birimlerini yazar.</p>
+                  <h3 data-i18n="step2Title">Güncelleme şifresini belirle</h3>
+                  <p data-i18n="step2Text">İlk kurulumda güncelleme şifresi sorulur. Dosya erişiminde şifre yoktur.</p>
                 </div>
               </li>
               <li class="step">
                 <span class="step__num">03</span>
                 <div>
                   <h3 data-i18n="step3Title">Tarayıcıyı aç</h3>
-                  <p data-i18n="step3Text">Yerel IP ve 7933 portuna git. Ayarlar'dan paylaşacağın klasörleri seç.</p>
+                  <p data-i18n="step3Text">Sunucu IP'si ve 7933 portuna git. Ayarlar'dan paylaşacağın klasörleri seç.</p>
                 </div>
               </li>
             </ol>
@@ -2457,10 +2542,8 @@
             </div>
 
             <div class="terminal__body" id="terminal-body">
-              <div class="tline"><span class="prompt">$</span><span class="cmd">git clone https://github.com/kinderlinux/PWFE.git</span></div>
-              <div class="tline"><span class="prompt">$</span><span class="cmd">cd PWFE</span></div>
-              <div class="tline"><span class="prompt">$</span><span class="cmd">sudo ./install.sh</span></div>
-              <div class="terminal__note"># → http://&lt;yerel-ip&gt;:7933</div>
+              <div class="tline"><span class="prompt">$</span><span class="cmd">curl -fsSL https://raw.githubusercontent.com/kinderlinux/PWFE/main/install.sh | sudo bash</span></div>
+              <div class="terminal__note"># → http://&lt;SUNUCU_IP&gt;:7933</div>
               <span class="cursor" aria-hidden="true"></span>
             </div>
           </div>
@@ -2485,10 +2568,6 @@
               <span data-i18n="finalButton">GitHub'da yıldızla</span>
               <span class="arrow" aria-hidden="true">★</span>
             </a>
-            <span class="address-chip">
-              <span class="status-dot" aria-hidden="true"></span>
-              http://192.168.1.14:7933
-            </span>
           </div>
         </div>
       </div>
@@ -2521,7 +2600,7 @@
         <div class="footer__links">
           <a href="https://github.com/kinderlinux/PWFE" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
           <a href="https://github.com/kinderlinux/PWFE#readme" target="_blank" rel="noopener noreferrer">README ↗</a>
-          <a href="https://github.com/kinderlinux/PWFE/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">GPL-3.0 ↗</a>
+          <a href="https://github.com/kinderlinux/PWFE/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">AGPL-3.0 ↗</a>
           <a href="#top" data-i18n="backTop">Yukarı ↑</a>
         </div>
       </div>
@@ -2539,7 +2618,7 @@
         pageTitle: "Panda Web File Explorer — KinderLinux",
         skip: "İçeriğe geç",
         toplineLeft: "Yerel ağ için dosya gezgini",
-        toplineRight: "Sürüm 2 · GPL-3.0 · kinderlinux",
+        toplineRight: "AGPL-3.0 · kinderlinux",
         navFeatures: "Özellikler",
         navSpecs: "Künye",
         navInstall: "Kurulum",
@@ -2547,6 +2626,8 @@
         languageLabel: "Dil seçimi",
         previewLabel: "PWFE dosya gezgini arayüz önizlemesi",
         starLabel: "Yıldızla",
+        themeToDark: "Karanlık temaya geç",
+        themeToLight: "Aydınlık temaya geç",
         heroEyebrow: "Kendi barındırdığın · Go · systemd",
         heroTitleA: "Dosyalarına",
         heroTitleB: "tarayıcıdan",
@@ -2554,7 +2635,7 @@
         heroText: "Yerel ağında çalışan, hafif ve sade bir dosya gezgini. Klasörlerini paylaş, dosyalarını tarayıcıdan görüntüle ve indir. Bulut yok, hesap yok, dışarıya giden veri yok.",
         ctaInstall: "Kuruluma geç",
         ctaGithub: "GitHub deposu",
-        meta1: "Tek binary",
+        meta1: "İki binary",
         meta2: "Sıfır bağımlılık",
         meta3: "Port 7933",
         tabBrowse: "gezgin",
@@ -2574,8 +2655,8 @@
         tableAction: "İndir",
         footStatus: "Bağlı · 5 öğe",
         footSize: "18,4 MB",
-        noteTitle: "Tek binary.",
-        noteText: "Kendi ağında, kendi portunda. Bulut yok.",
+        noteTitle: "İki binary.",
+        noteText: "pwfe + pwfe-update. Kendi ağında, kendi portunda.",
         m1: "Klasör paylaşımı",
         m2: "Dosya önizleme",
         m3: "Tek tık güncelleme",
@@ -2587,7 +2668,7 @@
         featuresTitleB: "Fazlası değil.",
         featuresIntro: "Dosya paylaşımı için sade bir arayüz ve temel araçlar. Süs değil, iş gören altı parça.",
         f1Title: "Hafif ve hızlı",
-        f1Text: "Go ile geliştirildi. Harici çalışma zamanı, paket yöneticisi ya da veritabanı istemez.",
+        f1Text: "Go ile geliştirildi. Sunucu (pwfe) ve güncelleyici (pwfe-update) harici çalışma zamanı, paket yöneticisi ya da veritabanı istemez.",
         f1Stat1: "harici bağımlılık",
         f1Stat2: "çalıştırılabilir dosya",
         f2Title: "Kolay klasör paylaşımı",
@@ -2619,6 +2700,7 @@
         specRuntime: "Çalışma zamanı",
         specUi: "Arayüz",
         specUiValue: "Tek HTML dosyası",
+        specBinaries: "Binary'ler",
         specService: "Servis",
         specUpdate: "Güncelleme",
         specUpdateValue: "GitHub üzerinden, şifreli",
@@ -2626,17 +2708,17 @@
         specPlatform: "Platform",
         specLicense: "Lisans",
         specNetwork: "Ağ",
-        specNetworkValue: "Yerel · 0.0.0.0:7933",
+        specNetworkValue: "Yerel ağ · 7933",
         installEyebrow: "Kurulum",
-        installTitleA: "İki komut.",
+        installTitleA: "Tek komut.",
         installTitleB: "Sonra tarayıcı.",
-        installText: "Arch Linux için hazırlanmış kurulum betiği bağımlılıkları kontrol eder, servisleri kurar ve arayüzü açar. Kaynağı kendin derlemek istersen README yanında.",
-        step1Title: "Depoyu çek",
-        step1Text: "Kaynak kodu klonla. Tek ihtiyacın git.",
-        step2Title: "Kur",
-        step2Text: "install.sh bağımlılıkları kurar, binary'leri derler, systemd birimlerini yazar.",
+        installText: "Arch Linux için resmî kurulum betiği bağımlılıkları kontrol eder, iki binary'yi derler, systemd servislerini kurar ve arayüzü açar. Depoyu klonlamak gerekmez.",
+        step1Title: "Betiği çalıştır",
+        step1Text: "Tek satırlık kurulum betiğini çalıştır. Bağımlılıkları ve servisleri kendisi kurar.",
+        step2Title: "Güncelleme şifresini belirle",
+        step2Text: "İlk kurulumda güncelleme şifresi sorulur. Dosya erişiminde şifre yoktur.",
         step3Title: "Tarayıcıyı aç",
-        step3Text: "Yerel IP ve 7933 portuna git. Ayarlar'dan paylaşacağın klasörleri seç.",
+        step3Text: "Sunucu IP'si ve 7933 portuna git. Ayarlar'dan paylaşacağın klasörleri seç.",
         readmeLink: "README'yi oku",
         terminalTitle: "bash — ~/pwfe",
         copyLabel: "Kopyala",
@@ -2656,7 +2738,7 @@
         pageTitle: "Panda Web File Explorer — KinderLinux",
         skip: "Skip to content",
         toplineLeft: "A file explorer for your local network",
-        toplineRight: "Version 2 · GPL-3.0 · kinderlinux",
+        toplineRight: "AGPL-3.0 · kinderlinux",
         navFeatures: "Features",
         navSpecs: "Spec sheet",
         navInstall: "Install",
@@ -2664,6 +2746,8 @@
         languageLabel: "Language",
         previewLabel: "Preview of the PWFE file explorer interface",
         starLabel: "Star",
+        themeToDark: "Switch to dark theme",
+        themeToLight: "Switch to light theme",
         heroEyebrow: "Self-hosted · Go · systemd",
         heroTitleA: "Your files,",
         heroTitleB: "in the browser",
@@ -2671,7 +2755,7 @@
         heroText: "A lightweight, simple file explorer for your local network. Share folders, preview and download files from a browser. No cloud, no account, no data leaving your network.",
         ctaInstall: "Get started",
         ctaGithub: "GitHub repository",
-        meta1: "Single binary",
+        meta1: "Two binaries",
         meta2: "No dependencies",
         meta3: "Port 7933",
         tabBrowse: "browse",
@@ -2691,8 +2775,8 @@
         tableAction: "Download",
         footStatus: "Connected · 5 items",
         footSize: "18.4 MB",
-        noteTitle: "Single binary.",
-        noteText: "Your network, your port. No cloud.",
+        noteTitle: "Two binaries.",
+        noteText: "pwfe + pwfe-update. Your network, your port.",
         m1: "Folder sharing",
         m2: "File preview",
         m3: "One-click updates",
@@ -2704,9 +2788,9 @@
         featuresTitleB: "Nothing more.",
         featuresIntro: "A straightforward interface and the essentials for sharing files. Six parts that do the work — no decoration.",
         f1Title: "Lightweight and fast",
-        f1Text: "Built with Go. No external runtime, package manager or database required.",
+        f1Text: "Built with Go. The server (pwfe) and updater (pwfe-update) need no external runtime, package manager or database.",
         f1Stat1: "external dependencies",
-        f1Stat2: "executable file",
+        f1Stat2: "executables",
         f2Title: "Easy folder sharing",
         f2Text: "Add or remove shared folders from the web panel. No editing config files on the server.",
         f3Title: "Preview and download",
@@ -2736,6 +2820,7 @@
         specRuntime: "Runtime",
         specUi: "Interface",
         specUiValue: "Single HTML file",
+        specBinaries: "Binaries",
         specService: "Service",
         specUpdate: "Updates",
         specUpdateValue: "From GitHub, password-protected",
@@ -2743,17 +2828,17 @@
         specPlatform: "Platform",
         specLicense: "License",
         specNetwork: "Network",
-        specNetworkValue: "Local · 0.0.0.0:7933",
+        specNetworkValue: "Local network · 7933",
         installEyebrow: "Install",
-        installTitleA: "Two commands.",
+        installTitleA: "One command.",
         installTitleB: "Then the browser.",
-        installText: "The installer for Arch Linux checks dependencies, sets up the services and opens the interface. If you'd rather build from source, the README is right there.",
-        step1Title: "Clone the repository",
-        step1Text: "Clone the source. All you need is git.",
-        step2Title: "Install",
-        step2Text: "install.sh installs dependencies, builds the binaries and writes the systemd units.",
+        installText: "The official installer for Arch Linux checks dependencies, builds both binaries, sets up the systemd services and opens the interface. No need to clone the repository.",
+        step1Title: "Run the script",
+        step1Text: "Run the one-line installer. It sets up dependencies and services for you.",
+        step2Title: "Set the update password",
+        step2Text: "The first install asks for an update password. File access stays password-free.",
         step3Title: "Open the browser",
-        step3Text: "Go to your local IP on port 7933. Pick the folders to share in Settings.",
+        step3Text: "Go to the server IP on port 7933. Pick the folders to share in Settings.",
         readmeLink: "Read the README",
         terminalTitle: "bash — ~/pwfe",
         copyLabel: "Copy",
@@ -2773,7 +2858,7 @@
         pageTitle: "Panda Web File Explorer — KinderLinux",
         skip: "Zum Inhalt springen",
         toplineLeft: "Ein Dateibrowser für dein lokales Netzwerk",
-        toplineRight: "Version 2 · GPL-3.0 · kinderlinux",
+        toplineRight: "AGPL-3.0 · kinderlinux",
         navFeatures: "Funktionen",
         navSpecs: "Datenblatt",
         navInstall: "Installation",
@@ -2781,6 +2866,8 @@
         languageLabel: "Sprache",
         previewLabel: "Vorschau der PWFE-Dateibrowser-Oberfläche",
         starLabel: "Markieren",
+        themeToDark: "Zum dunklen Design wechseln",
+        themeToLight: "Zum hellen Design wechseln",
         heroEyebrow: "Selbst gehostet · Go · systemd",
         heroTitleA: "Greife über den",
         heroTitleB: "Browser",
@@ -2788,7 +2875,7 @@
         heroText: "Ein schlanker, einfacher Dateibrowser für dein lokales Netzwerk. Ordner freigeben, Dateien im Browser ansehen und herunterladen. Keine Cloud, kein Konto, keine Daten nach außen.",
         ctaInstall: "Zur Installation",
         ctaGithub: "GitHub-Repository",
-        meta1: "Ein Binary",
+        meta1: "Zwei Binaries",
         meta2: "Keine Abhängigkeiten",
         meta3: "Port 7933",
         tabBrowse: "browser",
@@ -2808,8 +2895,8 @@
         tableAction: "Herunterladen",
         footStatus: "Verbunden · 5 Einträge",
         footSize: "18,4 MB",
-        noteTitle: "Ein Binary.",
-        noteText: "Dein Netzwerk, dein Port. Keine Cloud.",
+        noteTitle: "Zwei Binaries.",
+        noteText: "pwfe + pwfe-update. Dein Netzwerk, dein Port.",
         m1: "Ordnerfreigabe",
         m2: "Dateivorschau",
         m3: "Update mit einem Klick",
@@ -2821,9 +2908,9 @@
         featuresTitleB: "Nicht mehr.",
         featuresIntro: "Eine einfache Oberfläche und die wichtigsten Werkzeuge für Dateifreigabe. Sechs Teile, die arbeiten — keine Dekoration.",
         f1Title: "Schlank und schnell",
-        f1Text: "Mit Go entwickelt. Keine externe Laufzeit, kein Paketmanager, keine Datenbank.",
+        f1Text: "Mit Go entwickelt. Server (pwfe) und Updater (pwfe-update) brauchen keine externe Laufzeit, keinen Paketmanager und keine Datenbank.",
         f1Stat1: "externe Abhängigkeiten",
-        f1Stat2: "ausführbare Datei",
+        f1Stat2: "ausführbare Dateien",
         f2Title: "Ordner einfach freigeben",
         f2Text: "Freigegebene Ordner im Webpanel hinzufügen oder entfernen. Keine Konfigurationsdatei auf dem Server bearbeiten.",
         f3Title: "Ansehen und herunterladen",
@@ -2853,6 +2940,7 @@
         specRuntime: "Laufzeit",
         specUi: "Oberfläche",
         specUiValue: "Eine HTML-Datei",
+        specBinaries: "Binaries",
         specService: "Dienst",
         specUpdate: "Updates",
         specUpdateValue: "Über GitHub, passwortgeschützt",
@@ -2860,17 +2948,17 @@
         specPlatform: "Plattform",
         specLicense: "Lizenz",
         specNetwork: "Netzwerk",
-        specNetworkValue: "Lokal · 0.0.0.0:7933",
+        specNetworkValue: "Lokales Netzwerk · 7933",
         installEyebrow: "Installation",
-        installTitleA: "Zwei Befehle.",
+        installTitleA: "Ein Befehl.",
         installTitleB: "Dann der Browser.",
-        installText: "Das Installationsskript für Arch Linux prüft Abhängigkeiten, richtet die Dienste ein und öffnet die Oberfläche. Wer lieber selbst kompiliert, findet die Anleitung in der README.",
-        step1Title: "Repository klonen",
-        step1Text: "Quellcode klonen. Du brauchst nur git.",
-        step2Title: "Installieren",
-        step2Text: "install.sh installiert Abhängigkeiten, kompiliert die Binaries und schreibt die systemd-Units.",
+        installText: "Das offizielle Installationsskript für Arch Linux prüft Abhängigkeiten, kompiliert beide Binaries, richtet die systemd-Dienste ein und öffnet die Oberfläche. Das Repository muss nicht geklont werden.",
+        step1Title: "Skript ausführen",
+        step1Text: "Einzeiler ausführen. Abhängigkeiten und Dienste werden automatisch eingerichtet.",
+        step2Title: "Update-Passwort festlegen",
+        step2Text: "Bei der ersten Installation wird ein Update-Passwort abgefragt. Der Dateizugriff bleibt ohne Passwort.",
         step3Title: "Browser öffnen",
-        step3Text: "Lokale IP und Port 7933 aufrufen. In den Einstellungen die freizugebenden Ordner wählen.",
+        step3Text: "Server-IP und Port 7933 aufrufen. In den Einstellungen die freizugebenden Ordner wählen.",
         readmeLink: "README lesen",
         terminalTitle: "bash — ~/pwfe",
         copyLabel: "Kopieren",
@@ -2890,11 +2978,29 @@
     const copyButton = document.getElementById("copy-btn");
     const copyStatus = document.getElementById("copy-status");
     const copyLabel = document.querySelector(".copy-label");
+    const themeToggle = document.getElementById("theme-toggle");
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     let currentLanguage = "tr";
     let copied = false;
     let copyTimer = null;
+
+    function syncThemeToggle() {
+      if (!themeToggle) return;
+      const dictionary = translations[currentLanguage] || translations.tr;
+      const isDark = document.documentElement.dataset.theme === "dark";
+      const label = isDark ? dictionary.themeToLight : dictionary.themeToDark;
+      themeToggle.setAttribute("aria-label", label);
+      themeToggle.title = label;
+    }
+
+    function applyTheme(theme, persist) {
+      document.documentElement.dataset.theme = theme === "dark" ? "dark" : "light";
+      if (persist) {
+        try { localStorage.setItem("pwfe-theme", theme); } catch (_) {}
+      }
+      syncThemeToggle();
+    }
 
     function setLanguage(language) {
       const dictionary = translations[language] || translations.tr;
@@ -2917,9 +3023,18 @@
         copyLabel.textContent = copied ? dictionary.copiedLabel : dictionary.copyLabel;
       }
 
+      syncThemeToggle();
+
       try {
         localStorage.setItem("pwfe-language", currentLanguage);
       } catch (_) {}
+    }
+
+    if (themeToggle) {
+      applyTheme(document.documentElement.dataset.theme || "light", false);
+      themeToggle.addEventListener("click", () => {
+        applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark", true);
+      });
     }
 
     if (languageSelect) {
@@ -2957,12 +3072,32 @@
       }
     })();
 
+    // Sürüm numarası version.txt dosyasından okunur; site her sürümde güncellenmez.
+    (async function loadVersion() {
+      const versionElements = document.querySelectorAll("[data-version]");
+      if (!versionElements.length) return;
+
+      try {
+        const response = await fetch("https://raw.githubusercontent.com/kinderlinux/PWFE/main/version.txt", {
+          cache: "no-store"
+        });
+        if (!response.ok) throw new Error("version.txt unavailable");
+
+        const version = (await response.text()).trim().split(/\s+/)[0];
+        if (!/^\d+$/.test(version)) throw new Error("invalid version");
+
+        versionElements.forEach(element => {
+          element.textContent = version;
+        });
+      } catch (_) {
+        versionElements.forEach(element => {
+          element.textContent = "—";
+        });
+      }
+    })();
+
     // Kopyalama
-    const copyText = [
-      "git clone https://github.com/kinderlinux/PWFE.git",
-      "cd PWFE",
-      "sudo ./install.sh"
-    ].join("\n");
+    const copyText = "curl -fsSL https://raw.githubusercontent.com/kinderlinux/PWFE/main/install.sh | sudo bash";
 
     function fallbackCopy(text) {
       const area = document.createElement("textarea");
@@ -3032,9 +3167,7 @@
       const noteElement = terminalBody.querySelector(".terminal__note");
       const cursorElement = terminalBody.querySelector(".cursor");
       const commands = [
-        "git clone https://github.com/kinderlinux/PWFE.git",
-        "cd PWFE",
-        "sudo ./install.sh"
+        "curl -fsSL https://raw.githubusercontent.com/kinderlinux/PWFE/main/install.sh | sudo bash"
       ];
 
       let typed = false;
