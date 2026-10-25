@@ -162,62 +162,12 @@ export GOTOOLCHAIN=local GOPROXY=off CGO_ENABLED=0 GO111MODULE=on
 [[ "$("$TMP_DIR/pwfe" --version)" == "$VERSION" ]] || die "Derlenen binary sürümü hatalı."
 [[ "$("$TMP_DIR/pwfe-update" --version)" == "$VERSION" ]] || die "Derlenen güncelleyici sürümü hatalı."
 
-OLD_VERSION=""
-if [[ -f "$PREFIX/version.txt" ]]; then
-    OLD_VERSION="$(tr -d '[:space:]' < "$PREFIX/version.txt" || true)"
-fi
 if systemctl is-active --quiet pwfe.service 2>/dev/null; then
     SERVICE_WAS_ACTIVE=1
 fi
 
-backup_current() {
-    local version="$1"
-    [[ -n "$version" ]] || return 0
-    [[ -f "$PREFIX/pwfe" ]] || return 0
-    local backup_dir="$PREFIX/backups/$version"
-    mkdir -p "$backup_dir"
-    cp -f "$PREFIX/pwfe" "$backup_dir/pwfe"
-    [[ -f "$PREFIX/static/index.html" ]] && cp -f "$PREFIX/static/index.html" "$backup_dir/index.html"
-    [[ -f "$PREFIX/version.txt" ]] && cp -f "$PREFIX/version.txt" "$backup_dir/version.txt"
-    info "Mevcut sürüm yedeklendi: $backup_dir"
-}
-
-restore_current() {
-    local version="$1"
-    local backup_dir="$PREFIX/backups/$version"
-    [[ -f "$backup_dir/pwfe" ]] || return 1
-    [[ $SERVICE_WAS_ACTIVE -eq 1 ]] && systemctl stop pwfe.service 2>/dev/null || true
-    cp -f "$backup_dir/pwfe" "$PREFIX/pwfe"
-    if [[ -f "$backup_dir/index.html" ]]; then
-        cp -f "$backup_dir/index.html" "$PREFIX/static/index.html"
-    fi
-    if [[ -f "$backup_dir/version.txt" ]]; then
-        cp -f "$backup_dir/version.txt" "$PREFIX/version.txt"
-    fi
-    systemctl restart pwfe.service 2>/dev/null || true
-    return 0
-}
-
-# En yeni 3 yedeği tutar.
-prune_backups() {
-    local dir="$PREFIX/backups" versions=() name
-    [[ -d "$dir" ]] || return 0
-    while IFS= read -r name; do
-        versions+=("$name")
-    done < <(find "$dir" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | grep -E '^[0-9]+$' | sort -n)
-    local i=0
-    while (( i < ${#versions[@]} - 3 )); do
-        rm -rf "$dir/${versions[$i]}"
-        i=$((i + 1))
-    done
-}
-
-if [[ -n "$OLD_VERSION" ]]; then
-    backup_current "$OLD_VERSION"
-fi
-
 info "Dosyalar kuruluyor: $PREFIX"
-install -d -m 0755 "$PREFIX" "$PREFIX/static" "$PREFIX/backups" "$PREFIX/.update" "$CONFIG_DIR"
+install -d -m 0755 "$PREFIX" "$PREFIX/static" "$PREFIX/.update" "$CONFIG_DIR"
 
 if [[ $SERVICE_WAS_ACTIVE -eq 1 ]]; then
     systemctl stop pwfe.service
@@ -306,14 +256,10 @@ done
 
 if [[ $HEALTH_OK -ne 1 ]]; then
     warn "Servis sağlık kontrolü başarısız. Günlük: journalctl -u pwfe.service -n 50"
-    if [[ -n "$OLD_VERSION" ]] && restore_current "$OLD_VERSION"; then
-        die "Yeni sürüm başlatılamadı, eski sürüme dönüldü."
-    fi
     die "Kurulum başarısız."
 fi
 
 INSTALL_OK=1
-prune_backups
 
 IP_ADDR="$(ip route get 1.1.1.1 2>/dev/null | awk '{for (i=1; i<=NF; i++) if ($i == "src") { print $(i+1); exit }}' || true)"
 if [[ -z "$IP_ADDR" ]]; then

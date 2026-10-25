@@ -2,8 +2,7 @@
 //
 // GitHub'daki version.txt ile yerel sürümü karşılaştırır. Yeni sürüm varsa
 // yalnızca main.go ve static/index.html dosyalarını indirir, geçici bir
-// dizinde derler, mevcut sürümü yedekler, dosyaları değiştirir ve pwfe
-// servisini yeniden başlatır.
+// dizinde derler, dosyaları değiştirir ve pwfe servisini yeniden başlatır.
 package main
 
 import (
@@ -19,7 +18,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 	"syscall"
@@ -34,7 +32,6 @@ const (
 	maxVersionBytes     = 64
 	maxMainGoBytes      = 2 << 20
 	maxIndexBytes       = 5 << 20
-	keepBackups         = 3
 )
 
 type updateState struct {
@@ -57,8 +54,6 @@ type updater struct {
 func main() {
 	apply := flag.Bool("apply", false, "Güncellemeyi uygula")
 	check := flag.Bool("check", false, "Yalnızca sürüm kontrolü yap")
-	rollback := flag.Bool("rollback", false, "Yedekten geri dön")
-	toVersion := flag.String("to", "", "--rollback ile geri dönülecek sürüm")
 	rootFlag := flag.String("root", "", "Kurulum dizini (varsayılan: /opt/pwfe veya PWFE_ROOT)")
 	showVersion := flag.Bool("version", false, "Güncelleyici sürümünü yazdır")
 	noRestart := flag.Bool("no-restart", false, "Test için servisi yeniden başlatma")
@@ -90,24 +85,12 @@ func main() {
 		if err := u.check(); err != nil {
 			logError(err)
 		}
-	case *rollback:
-		target := 0
-		if strings.TrimSpace(*toVersion) != "" {
-			v, err := parseVersion(*toVersion)
-			if err != nil {
-				logError(err)
-			}
-			target = v
-		}
-		if err := u.rollback(target); err != nil {
-			logError(err)
-		}
 	case *apply:
 		if err := u.apply(); err != nil {
 			logError(err)
 		}
 	default:
-		fmt.Println("Kullanım: pwfe-update --apply | --check | --rollback [--to SURUM] [--root DIZIN]")
+		fmt.Println("Kullanım: pwfe-update --apply | --check [--root DIZIN]")
 		os.Exit(2)
 	}
 }
@@ -246,21 +229,7 @@ func (u *updater) apply() error {
 		return err
 	}
 
-	u.setState("backing_up", remote, "Mevcut sürüm yedekleniyor", "")
-	if err := u.backupCurrent(local); err != nil {
-		return err
-	}
-
 	u.setState("installing", remote, "Yeni sürüm kuruluyor", "")
-	defer func() {
-		if !success {
-			u.logger.Println("Kurulum tamamlanamadı, önceki sürüme dönülüyor...")
-			if rbErr := u.restore(local); rbErr != nil {
-				u.logger.Printf("Geri dönüş başarısız: %v", rbErr)
-			}
-		}
-	}()
-
 	if err := u.install(stage, remote); err != nil {
 		return err
 	}
@@ -275,7 +244,6 @@ func (u *updater) apply() error {
 	success = true
 	u.logger.Printf("Güncelleme tamamlandı: v%d", remote)
 	u.setState("done", remote, fmt.Sprintf("Sürüm v%d kuruldu", remote), "")
-	u.pruneBackups()
 	return nil
 }
 
@@ -391,20 +359,6 @@ func (u *updater) build(ctx context.Context, stage string, remote int) error {
 	return nil
 }
 
-func (u *updater) backupCurrent(version int) error {
-	dir := filepath.Join(u.root, "backups", strconv.Itoa(version))
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return err
-	}
-	if err := copyFile(filepath.Join(u.root, "pwfe"), filepath.Join(dir, "pwfe"), 0755); err != nil {
-		return err
-	}
-	if err := copyFile(filepath.Join(u.root, "static", "index.html"), filepath.Join(dir, "index.html"), 0644); err != nil {
-		return err
-	}
-	return copyFile(filepath.Join(u.root, "version.txt"), filepath.Join(dir, "version.txt"), 0644)
-}
-
 func (u *updater) install(stage string, remote int) error {
 	if err := os.MkdirAll(filepath.Join(u.root, "static"), 0755); err != nil {
 		return err
@@ -416,89 +370,6 @@ func (u *updater) install(stage string, remote int) error {
 		return err
 	}
 	return writeVersion(filepath.Join(u.root, "version.txt"), remote)
-}
-
-func (u *updater) restore(version int) error {
-	dir := filepath.Join(u.root, "backups", strconv.Itoa(version))
-	if _, err := os.Stat(dir); err != nil {
-		return fmt.Errorf("v%d yedeği bulunamadı: %w", version, err)
-	}
-	if err := copyFile(filepath.Join(dir, "pwfe"), filepath.Join(u.root, "pwfe"), 0755); err != nil {
-		return err
-	}
-	if err := copyFile(filepath.Join(dir, "index.html"), filepath.Join(u.root, "static", "index.html"), 0644); err != nil {
-		return err
-	}
-	if err := copyFile(filepath.Join(dir, "version.txt"), filepath.Join(u.root, "version.txt"), 0644); err != nil {
-		return err
-	}
-	if !u.noRestart {
-		if err := u.restart(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (u *updater) rollback(target int) error {
-	unlock, err := u.lock()
-	if err != nil {
-		if errors.Is(err, syscall.EWOULDBLOCK) {
-			return errors.New("başka bir güncelleme çalışıyor, geri dönüş yapılamadı")
-		}
-		return err
-	}
-	defer unlock()
-
-	local, err := u.localVersion()
-	if err != nil {
-		return err
-	}
-	if target == 0 {
-		target, err = u.latestBackup(local)
-		if err != nil {
-			return err
-		}
-	}
-	if target == local {
-		return fmt.Errorf("zaten v%d sürümü çalışıyor", local)
-	}
-
-	u.setState("rollback", target, "Önceki sürüme dönülüyor", "")
-	if err := u.backupCurrent(local); err != nil {
-		u.logger.Printf("mevcut sürüm yedeklenemedi: %v", err)
-	}
-	if err := u.restore(target); err != nil {
-		return err
-	}
-	u.logger.Printf("Geri dönüş tamamlandı: v%d -> v%d", local, target)
-	u.setState("done", target, fmt.Sprintf("Sürüm v%d geri yüklendi", target), "")
-	fmt.Printf("Geri dönüldü: v%d -> v%d\n", local, target)
-	return nil
-}
-
-func (u *updater) latestBackup(current int) (int, error) {
-	entries, err := os.ReadDir(filepath.Join(u.root, "backups"))
-	if err != nil {
-		return 0, fmt.Errorf("yedekler okunamadı: %w", err)
-	}
-	best := 0
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
-		version, err := parseVersion(entry.Name())
-		if err != nil || version >= current {
-			continue
-		}
-		if version > best {
-			best = version
-		}
-	}
-	if best == 0 {
-		return 0, errors.New("geri dönülecek yedek bulunamadı")
-	}
-	return best, nil
 }
 
 func (u *updater) restart() error {
@@ -520,34 +391,6 @@ func (u *updater) restart() error {
 		time.Sleep(500 * time.Millisecond)
 	}
 	return nil
-}
-
-func (u *updater) pruneBackups() {
-	entries, err := os.ReadDir(filepath.Join(u.root, "backups"))
-	if err != nil {
-		return
-	}
-	type backup struct {
-		version int
-		name    string
-	}
-	var backups []backup
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
-		version, err := parseVersion(entry.Name())
-		if err != nil {
-			continue
-		}
-		backups = append(backups, backup{version: version, name: entry.Name()})
-	}
-	sort.Slice(backups, func(i, j int) bool {
-		return backups[i].version > backups[j].version
-	})
-	for i := keepBackups; i < len(backups); i++ {
-		_ = os.RemoveAll(filepath.Join(u.root, "backups", backups[i].name))
-	}
 }
 
 func (u *updater) lock() (func(), error) {

@@ -49,12 +49,10 @@ Komut satırından:
 ```bash
 sudo /opt/pwfe/pwfe-update --check
 sudo systemctl start pwfe-update.service
-sudo /opt/pwfe/pwfe-update --rollback
 ```
 
 - Uzak sürüm, GitHub'daki `version.txt` ile karşılaştırılır.
 - Yeni sürüm varsa yalnızca `main.go` ve `static/index.html` indirilir ve derlenir.
-- Güncelleme başarısız olursa otomatik olarak önceki sürüme dönülür.
 - Günlük: `/opt/pwfe/update.log`
 
 Yeni sürüm yayınlamak için `version.txt` dosyasını artırıp `main` dalına push etmek yeterlidir.
@@ -90,7 +88,6 @@ Bu komut servisi durdurur, systemd birimlerini, `/opt/pwfe` ve `/etc/pwfe` dizin
 ├── static/index.html    # arayüz
 ├── version.txt          # yerel sürüm
 ├── update.log           # güncelleme günlüğü
-├── backups/             # eski sürümler
 └── .update/             # geçici derleme dizini
 
 /etc/pwfe/
@@ -123,7 +120,7 @@ Ayarlar:
 |---|---|
 | Güncelle butonu "şifre belirlenmemiş" diyor | `sudo /opt/pwfe/pwfe --set-update-password 'yeni'` |
 | Güncelleme derlenemiyor | `sudo pacman -S --needed go` |
-| Güncelleme sonrası servis açılmıyor | `journalctl -u pwfe -n 50` ve `/opt/pwfe/update.log`; `sudo /opt/pwfe/pwfe-update --rollback` |
+| Güncelleme sonrası servis açılmıyor | `journalctl -u pwfe -n 50` ve `/opt/pwfe/update.log` |
 | Arayüze erişemiyorum | `sudo systemctl status pwfe`; port çakışması ve güvenlik duvarı |
 | Açılışta servis başlamıyor | `sudo systemctl enable --now pwfe` |
 
