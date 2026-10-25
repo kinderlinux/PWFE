@@ -327,3 +327,4 @@ echo "  Arayüz : http://$IP_ADDR:$PORT"
 echo "  Ayarlar: $CONFIG_DIR/config.json"
 echo
 info "Servis açılışta otomatik başlar; kullanıcı oturumu gerekmez."
+info "KinderLinux tarafından ❤️"
