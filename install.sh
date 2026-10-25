@@ -1,133 +1,46 @@
 #!/usr/bin/env bash
 #
-# PWFE - Arch Linux kurulum ve güncelleme betiği
+# PWFE - Arch Linux kurulum ve kaldırma betiği
 #
 # Kullanım:
 #   sudo bash install.sh
-#   sudo bash install.sh --branch main
-#   sudo bash install.sh --update-password 'yeni-sifre'
-#   sudo bash install.sh --uninstall [--purge]
+#   sudo bash install.sh --uninstall
 #
 set -euo pipefail
 
 REPO_URL="https://github.com/kinderlinux/PWFE.git"
 BRANCH="main"
-UPDATE_REPO=""
-DEFAULT_UPDATE_REPO="kinderlinux/PWFE"
 PREFIX="/opt/pwfe"
 CONFIG_DIR="/etc/pwfe"
-UPDATE_PASSWORD=""
-ASSUME_YES=0
-FORCE=0
-NO_DEPS=0
 DO_UNINSTALL=0
-PURGE=0
-LOCAL_SOURCE=0
 
 info() { printf '\033[1;34m[PWFE]\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m[PWFE]\033[0m %s\n' "$*"; }
 die()  { printf '\033[1;31m[PWFE]\033[0m %s\n' "$*" >&2; exit 1; }
-
-# GitHub URL'sinden "sahip/depo" biçimini çıkarır.
-github_slug() {
-    local url="$1"
-    url="${url%/}"
-    url="${url%.git}"
-    case "$url" in
-        https://github.com/*) printf '%s' "${url#https://github.com/}" ;;
-        http://github.com/*)  printf '%s' "${url#http://github.com/}" ;;
-        git@github.com:*)      printf '%s' "${url#git@github.com:}" ;;
-        ssh://git@github.com/*) printf '%s' "${url#ssh://git@github.com/}" ;;
-        *) return 1 ;;
-    esac
-}
-
-valid_slug() {
-    local LC_ALL=C
-    [[ "$1" =~ ^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$ ]]
-}
-
-valid_branch() {
-    local LC_ALL=C
-    [[ "$1" =~ ^[A-Za-z0-9._/-]+$ ]]
-}
 
 usage() {
     cat <<'EOF'
 PWFE kurulum betiği (Arch Linux)
 
 Kullanım:
-  sudo bash install.sh [seçenekler]
+  sudo bash install.sh
+  sudo bash install.sh --uninstall
 
 Seçenekler:
-  --branch <dal>             Kurulacak git dalı (varsayılan: main)
-  --repo <url>               Alternatif git deposu
-  --local                    Betiğin yanındaki kaynak ağacından kur (test/geliştirme)
-  --update-repo <sahip/depo> Güncellemelerin izleyeceği GitHub deposu
-  --update-password <şifre>  Güncelleme şifresini belirle
-  --no-deps                  Eksik paketleri pacman ile kurma
-  -y, --yes                  Onay sormadan devam et
-  --force                    Arch Linux kontrolünü atla
-  --uninstall                PWFE'yi kaldır (config korunur)
-  --purge                    --uninstall ile config'i de sil
-  -h, --help                 Bu yardımı göster
+  --uninstall   PWFE'yi ve ayarlarını kaldır
+  -h, --help    Bu yardımı göster
 EOF
 }
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --branch)
-            [[ $# -ge 2 ]] || die "--branch için değer gerekli"
-            BRANCH="$2"; shift 2 ;;
-        --branch=*)
-            BRANCH="${1#*=}"; shift ;;
-        --repo)
-            [[ $# -ge 2 ]] || die "--repo için değer gerekli"
-            REPO_URL="$2"; shift 2 ;;
-        --repo=*)
-            REPO_URL="${1#*=}"; shift ;;
-        --local)
-            LOCAL_SOURCE=1; shift ;;
-        --update-repo)
-            [[ $# -ge 2 ]] || die "--update-repo için değer gerekli"
-            UPDATE_REPO="$2"; shift 2 ;;
-        --update-repo=*)
-            UPDATE_REPO="${1#*=}"; shift ;;
-        --update-password)
-            [[ $# -ge 2 ]] || die "--update-password için değer gerekli"
-            UPDATE_PASSWORD="$2"; shift 2 ;;
-        --update-password=*)
-            UPDATE_PASSWORD="${1#*=}"; shift ;;
-        --no-deps)
-            NO_DEPS=1; shift ;;
-        -y|--yes)
-            ASSUME_YES=1; shift ;;
-        --force)
-            FORCE=1; shift ;;
-        --uninstall)
-            DO_UNINSTALL=1; shift ;;
-        --purge)
-            PURGE=1; shift ;;
-        -h|--help)
-            usage; exit 0 ;;
-        *)
-            die "Bilinmeyen parametre: $1 (--help)" ;;
+        --uninstall) DO_UNINSTALL=1; shift ;;
+        -h|--help)   usage; exit 0 ;;
+        *)           die "Bilinmeyen parametre: $1 (--help)" ;;
     esac
 done
 
 [[ ${EUID:-$(id -u)} -eq 0 ]] || die "Bu betik root olarak çalıştırılmalı: sudo bash install.sh"
-
-valid_branch "$BRANCH" || die "Geçersiz dal adı: $BRANCH"
-
-if [[ -n "$UPDATE_REPO" ]]; then
-    UPDATE_REPO="${UPDATE_REPO%.git}"
-    valid_slug "$UPDATE_REPO" || die "Geçersiz --update-repo değeri: $UPDATE_REPO (örn. sahip/depo)"
-elif UPDATE_REPO="$(github_slug "$REPO_URL")" && valid_slug "$UPDATE_REPO"; then
-    :
-else
-    warn "GitHub deposu tanınamadı; güncellemeler varsayılan olarak $DEFAULT_UPDATE_REPO kullanacak. Değiştirmek için --update-repo kullanın."
-    UPDATE_REPO="$DEFAULT_UPDATE_REPO"
-fi
 
 uninstall_pwfe() {
     info "PWFE kaldırılıyor..."
@@ -136,14 +49,8 @@ uninstall_pwfe() {
     rm -f /etc/systemd/system/pwfe.service
     rm -f /etc/systemd/system/pwfe-update.service
     systemctl daemon-reload 2>/dev/null || true
-    rm -rf "$PREFIX"
-    if [[ $PURGE -eq 1 ]]; then
-        rm -rf "$CONFIG_DIR"
-        info "Config ve güncelleme şifresi silindi."
-    else
-        info "Config korundu: $CONFIG_DIR"
-    fi
-    info "PWFE kaldırıldı."
+    rm -rf "$PREFIX" "$CONFIG_DIR"
+    info "PWFE, config ve güncelleme şifresi silindi."
 }
 
 if [[ $DO_UNINSTALL -eq 1 ]]; then
@@ -155,22 +62,19 @@ fi
 if [[ -r /etc/os-release ]]; then
     # shellcheck disable=SC1091
     . /etc/os-release
-    if [[ "${ID:-}" != "arch" && " ${ID_LIKE:-} " != *" arch "* && $FORCE -eq 0 ]]; then
-        die "Bu betik Arch Linux için hazırlanmıştır. Yine de denemek için --force kullanın."
+    if [[ "${ID:-}" != "arch" && " ${ID_LIKE:-} " != *" arch "* ]]; then
+        die "Bu betik Arch Linux için hazırlanmıştır."
     fi
-elif [[ $FORCE -eq 0 ]]; then
-    die "/etc/os-release bulunamadı. Arch Linux için --force kullanın."
+else
+    die "/etc/os-release bulunamadı. Bu betik Arch Linux için hazırlanmıştır."
 fi
 
 confirm() {
-    local prompt="$1" answer=""
-    if [[ $ASSUME_YES -eq 1 ]]; then
-        return 0
-    fi
+    local answer=""
     if [[ -r /dev/tty ]]; then
-        read -r -p "$prompt [E/h] " answer </dev/tty || true
+        read -r -p "$1 [E/h] " answer </dev/tty || true
     elif [[ -t 0 ]]; then
-        read -r -p "$prompt [E/h] " answer || true
+        read -r -p "$1 [E/h] " answer || true
     else
         return 1
     fi
@@ -178,6 +82,19 @@ confirm() {
         e|E|y|Y|evet|yes) return 0 ;;
         *) return 1 ;;
     esac
+}
+
+read_password() {
+    local prompt="$1" var="$2" value=""
+    if [[ -r /dev/tty ]]; then
+        read -r -s -p "$prompt" value </dev/tty || true
+    elif [[ -t 0 ]]; then
+        read -r -s -p "$prompt" value || true
+    else
+        die "Güncelleme şifresi için terminal gerekli."
+    fi
+    printf '\n' >&2
+    printf -v "$var" '%s' "$value"
 }
 
 # Gerekli araçlar: go, git, curl
@@ -188,27 +105,26 @@ done
 
 if [[ ${#missing[@]} -gt 0 ]]; then
     warn "Eksik araçlar: ${missing[*]}"
-    if [[ $NO_DEPS -eq 1 ]]; then
-        die "--no-deps verildi. Önce şunları kurun: sudo pacman -S --needed ${missing[*]}"
-    fi
     command -v pacman >/dev/null 2>&1 || die "pacman bulunamadı. Şunları kurun: ${missing[*]}"
     if ! confirm "Eksik paketler pacman ile kurulsun mu? (${missing[*]})"; then
         die "Kurulum iptal edildi. Elle kurmak için: sudo pacman -S --needed ${missing[*]}"
     fi
     info "Paketler kuruluyor: ${missing[*]}"
-    if ! pacman -S --needed --noconfirm "${missing[@]}"; then
-        die "pacman başarısız oldu. Önce 'sudo pacman -Syu' çalıştırıp tekrar deneyin."
-    fi
+    pacman -S --needed --noconfirm "${missing[@]}" || die "pacman başarısız oldu."
 fi
 
 command -v systemctl >/dev/null 2>&1 || die "systemctl bulunamadı. Bu sistem systemd kullanmıyor."
 
-GO_VERSION="$(go env GOVERSION 2>/dev/null | sed 's/^go//' || true)"
-if [[ -z "$GO_VERSION" ]]; then
-    GO_VERSION="$(go version | awk '{print $3}' | sed 's/^go//')"
-fi
-if [[ "$(printf '%s\n%s\n' "1.18" "$GO_VERSION" | sort -V | head -n1)" != "1.18" ]]; then
-    die "Go 1.18 veya üzeri gerekli. Bulunan: $GO_VERSION"
+# Şifre yalnızca ilk kurulumda sorulur; mevcut şifre güncellemelerde korunur.
+UPDATE_PASSWORD=""
+NEED_PASSWORD=0
+if [[ ! -f "$CONFIG_DIR/update.passwd" ]]; then
+    NEED_PASSWORD=1
+    read_password "Güncelleme şifresi: " UPDATE_PASSWORD
+    read_password "Güncelleme şifresi (tekrar): " UPDATE_PASSWORD_CONFIRM
+    [[ -n "$UPDATE_PASSWORD" ]] || die "Güncelleme şifresi boş olamaz."
+    [[ "$UPDATE_PASSWORD" == "$UPDATE_PASSWORD_CONFIRM" ]] || die "Güncelleme şifreleri eşleşmiyor."
+    unset UPDATE_PASSWORD_CONFIRM
 fi
 
 TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/pwfe-install.XXXXXX")"
@@ -224,18 +140,11 @@ cleanup() {
 }
 trap cleanup EXIT
 
-if [[ $LOCAL_SOURCE -eq 1 ]]; then
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-}")" && pwd)"
-    SRC_DIR="$SCRIPT_DIR"
-    [[ -f "$SRC_DIR/main.go" && -f "$SRC_DIR/updater/main.go" ]] || die "--local: betiğin yanında main.go ve updater/main.go bulunamadı."
-    info "Yerel kaynak kullanılıyor: $SRC_DIR"
-else
-    info "Kaynak kodu alınıyor: $REPO_URL ($BRANCH)"
-    git clone --depth 1 --single-branch --branch "$BRANCH" "$REPO_URL" "$TMP_DIR/src"
-    SRC_DIR="$TMP_DIR/src"
-fi
+info "Kaynak kodu alınıyor: $REPO_URL ($BRANCH)"
+git clone --depth 1 --single-branch --branch "$BRANCH" "$REPO_URL" "$TMP_DIR/src"
+SRC_DIR="$TMP_DIR/src"
 
-[[ -f "$SRC_DIR/version.txt" ]] || die "version.txt bulunamadı: $SRC_DIR"
+[[ -f "$SRC_DIR/version.txt" ]] || die "version.txt bulunamadı."
 VERSION="$(tr -d '[:space:]' < "$SRC_DIR/version.txt")"
 [[ "$VERSION" =~ ^[0-9]+$ ]] || die "Geçersiz sürüm: $VERSION"
 
@@ -340,16 +249,12 @@ JSON
     info "Varsayılan config oluşturuldu: $CONFIG_DIR/config.json"
 fi
 
-GENERATED_PASSWORD=""
-if [[ -n "$UPDATE_PASSWORD" ]]; then
+if [[ $NEED_PASSWORD -eq 1 ]]; then
     PWFE_CONFIG="$CONFIG_DIR/config.json" "$PREFIX/pwfe" --set-update-password "$UPDATE_PASSWORD" >/dev/null
+    unset UPDATE_PASSWORD
     info "Güncelleme şifresi belirlendi."
-elif [[ ! -f "$CONFIG_DIR/update.passwd" ]]; then
-    # Şifreyi komut satırında göstermemek için üretimi pwfe'ye bırak.
-    PASSWORD_OUTPUT="$(PWFE_CONFIG="$CONFIG_DIR/config.json" "$PREFIX/pwfe" --set-update-password)"
-    GENERATED_PASSWORD="$(printf '%s\n' "$PASSWORD_OUTPUT" | sed -n 's/^Güncelleme şifresi: //p')"
-    [[ ${#GENERATED_PASSWORD} -eq 16 ]] || die "Güncelleme şifresi üretilemedi."
-    info "Güncelleme şifresi oluşturuldu."
+else
+    info "Mevcut güncelleme şifresi korunuyor."
 fi
 
 cat > /etc/systemd/system/pwfe.service <<EOF
@@ -362,10 +267,6 @@ Type=simple
 User=root
 WorkingDirectory=$PREFIX
 ExecStart=$PREFIX/pwfe
-Environment=PWFE_ROOT=$PREFIX
-Environment=PWFE_CONFIG=$CONFIG_DIR/config.json
-Environment=PWFE_UPDATE_REPO=$UPDATE_REPO
-Environment=PWFE_UPDATE_BRANCH=$BRANCH
 Restart=always
 RestartSec=3
 
@@ -384,9 +285,6 @@ Type=oneshot
 User=root
 WorkingDirectory=$PREFIX
 ExecStart=$PREFIX/pwfe-update --apply
-Environment=PWFE_ROOT=$PREFIX
-Environment=PWFE_UPDATE_REPO=$UPDATE_REPO
-Environment=PWFE_UPDATE_BRANCH=$BRANCH
 EOF
 
 systemctl daemon-reload
@@ -425,18 +323,7 @@ fi
 
 echo
 info "PWFE v$VERSION kuruldu."
-echo "  Arayüz      : http://$IP_ADDR:$PORT"
-echo "  Ayarlar     : $CONFIG_DIR/config.json"
-echo "  Güncelleyici: $PREFIX/pwfe-update"
-echo "  Yedekler    : $PREFIX/backups"
-echo "  Günlük      : $PREFIX/update.log"
-if [[ -n "$GENERATED_PASSWORD" ]]; then
-    echo "  Güncelleme şifresi: $GENERATED_PASSWORD"
-    echo "  (Bu şifreyi not edin. Değiştirmek için: sudo $PREFIX/pwfe --set-update-password 'yeni')"
-fi
-echo
-echo "  Güncelleme kontrolü : sudo $PREFIX/pwfe-update --check"
-echo "  Güncelleme          : sudo systemctl start pwfe-update.service"
-echo "  Geri dönüş          : sudo $PREFIX/pwfe-update --rollback"
+echo "  Arayüz : http://$IP_ADDR:$PORT"
+echo "  Ayarlar: $CONFIG_DIR/config.json"
 echo
 info "Servis açılışta otomatik başlar; kullanıcı oturumu gerekmez."

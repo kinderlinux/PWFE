@@ -8,4 +8,3 @@ Type=oneshot
 User=root
 WorkingDirectory=/opt/pwfe
 ExecStart=/opt/pwfe/pwfe-update --apply
-Environment=PWFE_ROOT=/opt/pwfe
