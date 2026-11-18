@@ -1,3 +1,6 @@
+# ! ŞU ANDA KULLANMAYINIZ PROJEYE ARA VERDİM ! 
+
+
 # Panda Web File Explorer (PWFE)
 
 Yerel ağınızda çalışan, hafif bir web dosya gezginidir. Go ile yazılmıştır; varsayılan port **7933**'tür. Arch Linux için kurulum betiği ve systemd servisi içerir.
